@@ -1,112 +1,135 @@
 <!DOCTYPE html>
+<!-- Declares the document as HTML5 -->
+
 <html lang="en">
+<!-- Root HTML element, language set to English -->
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TranscribeFlow - Audio Transcript Summarizer</title>
-    
-    <!-- Tailwind CSS CDN for rapid styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Configure Tailwind with custom happy color palette -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // Happy, vibrant color palette
-                        primary: '#6366f1',      // Indigo - main brand color
-                        secondary: '#ec4899',    // Pink - accent color
-                        success: '#10b981',      // Green - success states
-                        warning: '#f59e0b',      // Amber - warnings
-                        light: '#f0f9ff',        // Sky blue - background
-                        accent: '#8b5cf6',       // Purple - highlights
-                    }
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8" />
+  <!-- Character encoding (supports emojis & special characters) -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Ensures responsive layout on mobile devices -->
+
+  <title>TranscribeFlow - Audio Transcript Summarizer</title>
+  <!-- Browser tab title -->
+
+  <!-- Plain CSS file served via FastAPI StaticFiles -->
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-<body class="bg-light min-h-screen">
-    <!-- Main container with centered content -->
-    <div class="max-w-4xl mx-auto px-4 py-8">
-        
-        <!-- Header section -->
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-primary mb-2">🎙️ TranscribeFlow</h1>
-            <p class="text-gray-600">Transform audio into text and summaries instantly</p>
-        </header>
 
-        <!-- Upload card section -->
-        <div class="bg-white rounded-lg shadow-md p-8 mb-8">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Upload Audio File</h2>
-            
-            <!-- File upload form -->
-            <form id="uploadForm" class="space-y-4">
-                <!-- File input with custom styling -->
-                <div class="border-2 border-dashed border-primary rounded-lg p-6 text-center hover:bg-blue-50 transition">
-                    <input 
-                        type="file" 
-                        id="audioFile" 
-                        accept=".mp3,.wav,.m4a,.flac,.ogg"
-                        class="hidden"
-                    >
-                    <!-- Custom file upload label that triggers file input -->
-                    <label for="audioFile" class="cursor-pointer">
-                        <div class="text-primary text-5xl mb-2">📁</div>
-                        <div class="text-gray-700 font-medium">Click to select audio file</div>
-                        <div class="text-gray-500 text-sm mt-1">MP3, WAV, M4A, FLAC, OGG (Max 25MB)</div>
-                        <!-- Display selected filename -->
-                        <div id="fileName" class="text-secondary font-medium mt-2"></div>
-                    </label>
-                </div>
+<body>
+  <!-- Page body -->
 
-                <!-- Upload button -->
-                <button 
-                    type="submit" 
-                    id="uploadBtn"
-                    class="w-full bg-primary text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Upload & Process
-                </button>
-            </form>
+  <div class="container">
+    <!-- Main centered layout container -->
 
-            <!-- Loading indicator (hidden by default) -->
-            <div id="loading" class="hidden mt-4 text-center">
-                <div class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-gray-600 mt-2">Processing your audio...</p>
+    <header class="header">
+      <!-- Page header section -->
+
+      <h1 class="title">🎙️ TranscribeFlow</h1>
+      <!-- App name / branding -->
+
+      <p class="subtitle">
+        Transform audio into text and summaries instantly
+      </p>
+      <!-- Short description -->
+    </header>
+
+    <section class="card">
+      <!-- Upload card -->
+
+      <h2 class="card-title">Upload Audio File</h2>
+      <!-- Card heading -->
+
+      <form id="uploadForm" class="stack">
+        <!-- Upload form with vertical spacing -->
+
+        <div class="dropzone">
+          <!-- Drag-and-drop / click upload area -->
+
+          <input
+            type="file"
+            id="audioFile"
+            accept=".mp3,.wav,.m4a,.flac,.ogg"
+            class="hidden"
+          />
+          <!-- Hidden file input; label will trigger it -->
+
+          <label for="audioFile" class="dropzone-label">
+            <!-- Clickable label connected to file input -->
+
+            <div class="dropzone-icon">📁</div>
+            <!-- Icon shown in dropzone -->
+
+            <div class="dropzone-text">
+              Click to select audio file
             </div>
+            <!-- Main instruction text -->
 
-            <!-- Error message display (hidden by default) -->
-            <div id="errorMsg" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"></div>
+            <div class="dropzone-hint">
+              MP3, WAV, M4A, FLAC, OGG (Max 25MB)
+            </div>
+            <!-- File format hint -->
+
+            <div id="fileName" class="file-name"></div>
+            <!-- Selected file name appears here -->
+          </label>
         </div>
 
-        <!-- Results section (hidden by default) -->
-        <div id="results" class="hidden space-y-6">
-            <!-- Transcript card -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-xl font-semibold text-gray-800 mb-3 flex items-center">
-                    <span class="text-2xl mr-2">📝</span> Full Transcript
-                </h3>
-                <div id="transcript" class="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded border border-gray-200 max-h-64 overflow-y-auto"></div>
-            </div>
+        <button
+          type="submit"
+          id="uploadBtn"
+          class="btn-primary"
+        >
+          Upload & Process
+        </button>
+        <!-- Submit button -->
+      </form>
 
-            <!-- Summary card -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-xl font-semibold text-gray-800 mb-3 flex items-center">
-                    <span class="text-2xl mr-2">✨</span> Summary
-                </h3>
-                <div id="summary" class="text-gray-700 leading-relaxed bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded border border-purple-200"></div>
-            </div>
+      <div id="loading" class="hidden loading">
+        <!-- Loading state (hidden by default) -->
 
-            <!-- Success message -->
-            <div class="bg-success bg-opacity-10 border border-success text-green-800 px-4 py-3 rounded text-center">
-                ✓ <span id="statusMsg"></span>
-            </div>
-        </div>
-    </div>
+        <div class="spinner" aria-label="Loading"></div>
+        <!-- Animated spinner -->
 
-    <!-- Link to external JavaScript file -->
-    <script src="app.js"></script>
+        <p class="loading-text">Processing your audio...</p>
+        <!-- Loading message -->
+      </div>
+
+      <div id="errorMsg" class="hidden alert-error"></div>
+      <!-- Error message container -->
+    </section>
+
+    <section id="results" class="hidden stack-lg">
+      <!-- Results section (shown after processing) -->
+
+      <div class="card">
+        <!-- Transcript card -->
+
+        <h3 class="section-title">📝 Full Transcript</h3>
+
+        <div id="transcript" class="box scroll"></div>
+        <!-- Scrollable transcript content -->
+      </div>
+
+      <div class="card">
+        <!-- Summary card -->
+
+        <h3 class="section-title">✨ Summary</h3>
+
+        <div id="summary" class="box box-gradient"></div>
+        <!-- Summary content -->
+      </div>
+
+      <div class="alert-success">
+        <!-- Success message -->
+        ✓ <span id="statusMsg"></span>
+      </div>
+    </section>
+  </div>
+
+  <!-- JavaScript logic for upload & UI updates -->
+  <script src="./app.js"></script>
 </body>
 </html>

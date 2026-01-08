@@ -1,0 +1,179 @@
+/* ---------------------------
+   TranscribeFlow - Plain CSS
+   Simple, clean UI with a happy palette.
+   No animations except a tiny loading spinner.
+---------------------------- */
+
+/* Happy palette (same spirit as Tailwind config) */
+:root{
+  --primary: #6366f1;   /* indigo */
+  --secondary: #ec4899; /* pink */
+  --success: #10b981;   /* green */
+  --light: #f0f9ff;     /* sky background */
+  --accent: #8b5cf6;    /* purple */
+  --text: #111827;      /* near-black */
+  --muted: #6b7280;     /* gray */
+  --border: #e5e7eb;    /* light gray border */
+  --card: #ffffff;
+}
+
+/* Basic reset */
+*{ box-sizing: border-box; }
+html, body{ height: 100%; }
+body{
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  background: var(--light);
+  color: var(--text);
+}
+
+/* Layout container */
+.container{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+/* Header */
+.header{
+  text-align: center;
+  margin-bottom: 32px;
+}
+.title{
+  margin: 0 0 6px;
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.subtitle{
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Cards */
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.06);
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.card-title{
+  margin: 0 0 14px;
+  font-size: 22px;
+}
+.section-title{
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+/* Stacks (vertical spacing) */
+.stack > * + *{ margin-top: 12px; }
+.stack-lg > * + *{ margin-top: 18px; }
+
+/* Dropzone */
+.hidden{ display: none !important; }
+
+.dropzone{
+  border: 2px dashed var(--primary);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  background: #fff;
+}
+.dropzone-label{
+  cursor: pointer;
+  display: block;
+}
+.dropzone-icon{
+  font-size: 44px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.dropzone-text{
+  font-weight: 700;
+  color: #374151;
+}
+.dropzone-hint{
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.file-name{
+  margin-top: 10px;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+/* Button */
+.btn-primary{
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.btn-primary:disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Loading */
+.loading{
+  margin-top: 14px;
+  text-align: center;
+}
+.spinner{
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  border: 4px solid rgba(99, 102, 241, 0.25);
+  border-top-color: var(--primary);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text{ margin: 0; color: var(--muted); }
+
+/* Output boxes */
+.box{
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  line-height: 1.55;
+  color: #374151;
+}
+.scroll{
+  max-height: 260px;
+  overflow-y: auto;
+}
+.box-gradient{
+  background: linear-gradient(90deg, #f5f3ff, #fdf2f8); /* purple-50 to pink-50 vibe */
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+/* Alerts */
+.alert-error{
+  margin-top: 14px;
+  padding: 12px 12px;
+  border-radius: 12px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  font-weight: 600;
+}
+.alert-success{
+  padding: 12px 12px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #065f46;
+  text-align: center;
+  font-weight: 700;
+}
