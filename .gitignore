@@ -47,3 +47,5 @@ htmlcov/
 # Database
 *.db
 *.sqlite3
+
+uploads/
