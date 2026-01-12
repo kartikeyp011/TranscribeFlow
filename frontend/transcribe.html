@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TranscribeFlow - Desktop</title>
+    <link rel="stylesheet" href="./transcribe.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html"><div class="nav-brand">TranscribeFlow</div></a>
+    </nav>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <section class="card upload-section">
+            <h2>📁 Upload Audio</h2>
+            <form id="uploadForm">
+                <div class="dropzone">
+                    <input type="file" id="audioFile" accept=".mp3,.wav,.m4a">
+                    <label for="audioFile">
+                        <div class="dropzone-icon">📁</div>
+                        <span id="dropzoneText">Select audio file</span>
+                        <small id="dropzoneHint">Max 25MB</small>
+                        <div id="fileName" class="file-name"></div>
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">Process Audio →</button>
+            </form>
+            <div id="loading" class="loading hidden">Processing...</div>
+            <div id="errorMsg" class="error hidden"></div>
+        </section>
+
+        <!-- File Info -->
+        <section id="fileInfoSection" class="card hidden">
+            <h3>📄 File Details</h3>
+            <div class="file-info">
+                <div><strong>Name:</strong> <span id="fileInfoName">-</span></div>
+                <div><strong>Size:</strong> <span id="fileInfoSize">-</span></div>
+                <div><strong>Uploaded:</strong> <span id="fileInfoTime">-</span></div>
+            </div>
+            
+            <!-- Audio Player -->
+            <div class="audio-player">
+                <audio id="audioPlayer"></audio>
+                <div class="player-controls">
+                    <button id="skipBack" class="skip-btn">⏮ 10s</button>
+                    <button id="playPause" class="play-btn">▶️</button>
+                    <button id="skipForward" class="skip-btn">10s ⏭</button>
+                    <div class="progress-container">
+                        <span id="currentTime">0:00</span>
+                        <input type="range" id="progressBar" min="0" max="100" value="0">
+                        <span id="duration">0:00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results -->
+        <section id="results" class="hidden">
+            <!-- Transcript -->
+            <div class="card">
+                <div class="section-header">
+                    <h3>📝 Transcript</h3>
+                    <div class="controls">
+                        <select id="fontSize">
+                            <option value="14">Small</option>
+                            <option value="16" selected>Normal</option>
+                            <option value="18">Large</option>
+                        </select>
+                        <button id="copyTranscript" class="btn-copy">📋 Copy</button>
+                        <button id="exportTxt" class="btn-export">⬇️ TXT</button>
+                    </div>
+                </div>
+                <input type="text" id="searchInput" placeholder="Search transcript...">
+                <div id="searchResults" class="search-count"></div>
+                <div id="transcript" class="transcript-content">
+                    Welcome to our meeting. Today we're discussing the quarterly results. 
+                    Our revenue increased by 15% compared to last quarter. The marketing 
+                    campaign has been successful. We've onboarded 25 new clients. The 
+                    engineering team completed the new feature rollout. Customer satisfaction 
+                    scores are at 92%. Next quarter we plan to expand into European markets. 
+                    The budget has been approved for additional hiring.
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="card">
+                <div class="section-header">
+                    <h3>✨ Summary</h3>
+                    <div class="controls">
+                        <select id="summaryFontSize">
+                            <option value="14">Small</option>
+                            <option value="16" selected>Normal</option>
+                            <option value="18">Large</option>
+                        </select>
+                        <button id="copySummary" class="btn-copy">📋 Copy</button>
+                        <button id="exportSummaryTxt" class="btn-export">⬇️ TXT</button>
+                    </div>
+                </div>
+                <div id="summary" class="summary-content">
+                    <strong>Meeting Summary:</strong><br>
+                        <ul>
+                            <li>Quarterly revenue increased by 15%</li>
+                            <li>25 new clients onboarded</li>
+                            <li>Marketing campaign successful</li>
+                            <li>Customer satisfaction at 92%</li>
+                            <li>Engineering features deployed</li>
+                            <li>European expansion planned for next quarter</li>
+                            <li>Budget approved for additional hires</li>
+                        </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="./transcribe.js"></script>
+</body>
+</html>

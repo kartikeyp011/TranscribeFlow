@@ -1,135 +1,177 @@
 <!DOCTYPE html>
-<!-- Declares the document as HTML5 -->
-
-<html lang="en">
-<!-- Root HTML element, language set to English -->
-
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8" />
-  <!-- Character encoding (supports emojis & special characters) -->
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Ensures responsive layout on mobile devices -->
-
-  <title>TranscribeFlow - Audio Transcript Summarizer</title>
-  <!-- Browser tab title -->
-
-  <!-- Plain CSS file served via FastAPI StaticFiles -->
-  <link rel="stylesheet" href="./styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TranscribeFlo</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
-  <!-- Page body -->
-
-  <div class="container">
-    <!-- Main centered layout container -->
-
-    <header class="header">
-      <!-- Page header section -->
-
-      <h1 class="title">🎙️ TranscribeFlow</h1>
-      <!-- App name / branding -->
-
-      <p class="subtitle">
-        Transform audio into text and summaries instantly
-      </p>
-      <!-- Short description -->
-    </header>
-
-    <section class="card">
-      <!-- Upload card -->
-
-      <h2 class="card-title">Upload Audio File</h2>
-      <!-- Card heading -->
-
-      <form id="uploadForm" class="stack">
-        <!-- Upload form with vertical spacing -->
-
-        <div class="dropzone">
-          <!-- Drag-and-drop / click upload area -->
-
-          <input
-            type="file"
-            id="audioFile"
-            accept=".mp3,.wav,.m4a,.flac,.ogg"
-            class="hidden"
-          />
-          <!-- Hidden file input; label will trigger it -->
-
-          <label for="audioFile" class="dropzone-label">
-            <!-- Clickable label connected to file input -->
-
-            <div class="dropzone-icon">📁</div>
-            <!-- Icon shown in dropzone -->
-
-            <div class="dropzone-text">
-              Click to select audio file
-            </div>
-            <!-- Main instruction text -->
-
-            <div class="dropzone-hint">
-              MP3, WAV, M4A, FLAC, OGG (Max 25MB)
-            </div>
-            <!-- File format hint -->
-
-            <div id="fileName" class="file-name"></div>
-            <!-- Selected file name appears here -->
-          </label>
+  <div class="landing-container">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
         </div>
-
-        <button
-          type="submit"
-          id="uploadBtn"
-          class="btn-primary"
-        >
-          Upload & Process
-        </button>
-        <!-- Submit button -->
-      </form>
-
-      <div id="loading" class="hidden loading">
-        <!-- Loading state (hidden by default) -->
-
-        <div class="spinner" aria-label="Loading"></div>
-        <!-- Animated spinner -->
-
-        <p class="loading-text">Processing your audio...</p>
-        <!-- Loading message -->
+        <a href="./transcribe.html" class="nav-cta">
+          <span>Launch App</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
       </div>
+    </nav>
 
-      <div id="errorMsg" class="hidden alert-error"></div>
-      <!-- Error message container -->
+    <!-- Hero Section -->
+    <main class="hero-section">
+      <div class="hero-container">
+        
+        <h1 class="hero-title">
+          <span class="title-line">Transform Audio into</span>
+          <span class="title-line title-accent">Actionable Insights</span>
+        </h1>
+        
+        <p class="hero-subtitle">
+          Professional-grade audio transcription and summarization for meetings, 
+          interviews, lectures, and podcasts. Fast, accurate, and secure.
+        </p>
+        
+        <div class="hero-cta">
+          <a href="./transcribe.html" class="cta-button-primary">
+            <span>Start Transcribing Free</span>
+            <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+      <div class="section-header">
+        <h2 class="section-title">Why Professionals Choose TranscribeFlow</h2>
+        <p class="section-subtitle">Powerful features designed for productivity</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-file-export"></i>
+          </div>
+          <h3 class="feature-title">Export & Share</h3>
+          <p class="feature-description">
+            Export transcripts as TXT, DOC, or PDF. Share with colleagues or clients seamlessly.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-search"></i>
+          </div>
+          <h3 class="feature-title">Smart Search</h3>
+          <p class="feature-description">
+            Instantly find keywords and phrases within your transcripts with our powerful search.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-clipboard-check"></i>
+          </div>
+          <h3 class="feature-title">AI Summarization</h3>
+          <p class="feature-description">
+            Get concise summaries highlighting key points, decisions, and action items.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-headphones"></i>
+          </div>
+          <h3 class="feature-title">Audio Controls</h3>
+          <p class="feature-description">
+            Full-featured audio player with seeking, speed control, and volume adjustment.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-history"></i>
+          </div>
+          <h3 class="feature-title">Recent Files</h3>
+          <p class="feature-description">
+            Quick access to your recent transcriptions with automatic cloud backup.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-cogs"></i>
+          </div>
+          <h3 class="feature-title">Customization</h3>
+          <p class="feature-description">
+            Adjust font size, colors, and layout to match your workflow preferences.
+          </p>
+        </div>
+      </div>
     </section>
 
-    <section id="results" class="hidden stack-lg">
-      <!-- Results section (shown after processing) -->
-
-      <div class="card">
-        <!-- Transcript card -->
-
-        <h3 class="section-title">📝 Full Transcript</h3>
-
-        <div id="transcript" class="box scroll"></div>
-        <!-- Scrollable transcript content -->
-      </div>
-
-      <div class="card">
-        <!-- Summary card -->
-
-        <h3 class="section-title">✨ Summary</h3>
-
-        <div id="summary" class="box box-gradient"></div>
-        <!-- Summary content -->
-      </div>
-
-      <div class="alert-success">
-        <!-- Success message -->
-        ✓ <span id="statusMsg"></span>
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <div class="cta-container">
+        <h2 class="cta-title">Ready to Transform Your Audio Workflow?</h2>
+        <p class="cta-subtitle">
+          Join thousands of professionals who save hours every week with TranscribeFlow.
+        </p>
+        <a href="./transcribe.html" class="cta-button-large">
+          <span>Start Transcribing Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
       </div>
     </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-copyright">
+          © 2026 TranscribeFlow. All rights reserved.
+        </div>
+    </footer>
   </div>
 
-  <!-- JavaScript logic for upload & UI updates -->
-  <script src="./app.js"></script>
+  <script>
+    // Simple scroll animation for feature cards
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add hover effects for feature cards
+      const featureCards = document.querySelectorAll('.feature-card');
+      
+      featureCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-8px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0)';
+        });
+      });
+      
+      // Smooth scroll for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const href = this.getAttribute('href');
+          
+          if (href !== '#') {
+            e.preventDefault();
+            const targetElement = document.querySelector(href);
+            
+            if (targetElement) {
+              window.scrollTo({
+                top: targetElement.offsetTop - 80,
+                behavior: 'smooth'
+              });
+            }
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>
