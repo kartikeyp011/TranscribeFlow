@@ -1,236 +1,317 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TranscribeFlow - App</title>
-    <link rel="stylesheet" href="./transcribe.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TranscribeFlow - Audio Transcription & AI Summary</title>
+  <link rel="stylesheet" href="./transcribe.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="app-container">
     <!-- Navigation -->
-    <nav class="landing-nav">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <a href="index.html" style="text-decoration: none; color: inherit;">
-                    <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
-                </a>
-            </div>
-            <div class="nav-actions">
-                <button id="clearAllBtn" class="nav-cta secondary">
-                    <i class="fas fa-trash-alt"></i>
-                    <span>Clear All</span>
-                </button>
-            </div>
+    <nav class="app-nav">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
+          <span class="nav-subtitle">Audio Transcription & AI Summary</span>
         </div>
+        <div class="nav-actions">
+          <button id="clearAllBtn" class="nav-cta secondary">
+            <i class="fas fa-trash-alt"></i>
+            <span>Clear All</span>
+          </button>
+          <a href="./index.html" class="nav-cta">
+            <i class="fas fa-home"></i>
+            <span>Back to Home</span>
+          </a>
+        </div>
+      </div>
     </nav>
 
-    <div class="container">
-        <!-- Upload Section -->
-        <section class="card upload-section">
-            <div class="section-header">
-                <h2><i class="fas fa-file-upload"></i> Upload Audio</h2>
-                <p class="section-subtitle">Upload your audio file for transcription and summarization</p>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Left Column - Upload & Controls -->
+      <div class="content-column left-column">
+        <!-- Upload Card -->
+        <div class="card upload-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
             </div>
-            <form id="uploadForm">
-                <div class="dropzone">
-                    <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg">
-                    <label for="audioFile">
-                        <div class="dropzone-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <span id="dropzoneText">Click to select or drag & drop audio file</span>
-                        <small id="dropzoneHint">Supports MP3, WAV, M4A, OGG • Max 25MB</small>
-                        <div id="fileName" class="file-name"></div>
-                    </label>
+            <div class="card-header-content">
+              <h2>Upload Audio</h2>
+              <p class="card-subtitle">Upload your audio file for transcription</p>
+            </div>
+          </div>
+          
+          <form id="uploadForm" class="upload-form">
+            <div class="dropzone" id="dropzone">
+              <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg">
+              <div class="dropzone-content">
+                <div class="dropzone-icon">
+                  <i class="fas fa-file-audio"></i>
                 </div>
-                <button type="submit" id="processBtn" class="cta-button-primary">
-                    <i class="fas fa-magic"></i>
-                    <span id="processBtnText">Process Audio</span>
-                    <i id="processBtnIcon" class="fas fa-arrow-right"></i>
-                    <i id="processingSpinner" class="fas fa-spinner fa-spin hidden"></i>
-                </button>
-            </form>
-            <div id="loading" class="loading hidden">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Processing audio file  </span>
-            </div>
-            <div id="errorMsg" class="error hidden"></div>
-        </section>
-
-        <!-- File Info - UPDATED STRUCTURE -->
-        <section id="fileInfoSection" class="card file-info-card hidden">
-            <div class="section-header">
-                <h3><i class="fas fa-file-audio"></i> Audio Player</h3>
-                <p class="section-subtitle">Playback controls for your uploaded audio</p>
-            </div>
-
-            <div class="file-info">
-                <div class="info-item">
-                    <strong><i class="fas fa-file"></i> Name:</strong>
-                    <span id="fileInfoName">-</span>
+                <div class="dropzone-text">
+                  <span id="dropzoneText" class="dropzone-main">Click to select or drag & drop</span>
+                  <span id="dropzoneHint" class="dropzone-hint">MP3, WAV, M4A, OGG • Max 25MB</span>
                 </div>
-                <div class="info-item">
-                    <strong><i class="fas fa-weight-hanging"></i> Size:</strong>
-                    <span id="fileInfoSize">-</span>
-                </div>
-                <div class="info-item">
-                    <strong><i class="fas fa-clock"></i> Uploaded:</strong>
-                    <span id="fileInfoTime">-</span>
-                </div>
+              </div>
+              <div id="fileName" class="file-name-preview"></div>
             </div>
-
-            <!-- Audio Player - SIMPLIFIED -->
-            <div class="audio-player-wrapper">
-                <audio id="audioPlayer" controls></audio>
-                <div class="custom-controls">
-                    <button id="playPause" class="control-btn play-btn">
-                        <i class="fas fa-play"></i>
-                    </button>
-                    <button id="skipBack" class="control-btn">
-                        <i class="fas fa-backward"></i>
-                    </button>
-                    <button id="skipForward" class="control-btn">
-                        <i class="fas fa-forward"></i>
-                    </button>
-                    <div class="time-progress">
-                        <span id="currentTime">0:00</span>
-                        <input type="range" id="progressBar" min="0" max="100" value="0">
-                        <span id="duration">0:00</span>
-                    </div>
-                    <div class="volume-section">
-                        <i class="fas fa-volume-up"></i>
-                        <input type="range" id="volumeBar" min="0" max="100" value="100">
-                    </div>
+            
+            <button type="submit" id="processBtn" class="btn-primary">
+              <span id="processBtnText">Process Audio</span>
+              <i class="fas fa-magic"></i>
+              <i id="processingSpinner" class="fas fa-spinner fa-spin hidden"></i>
+            </button>
+          </form>
+          
+          <div id="loading" class="loading-indicator hidden">
+            <div class="loading-spinner"></div>
+            <div class="loading-content">
+              <span class="loading-text">Processing audio...</span>
+              <div class="loading-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" id="progressFill"></div>
                 </div>
+              </div>
             </div>
-        </section>
-
-        <!-- Results -->
-        <section id="results" class="hidden">
-            <div class="results-container">
-                <!-- Controls Row -->
-                <div class="controls-row">
-                    <div class="font-controls">
-                        <div class="control-group">
-                            <i class="fas fa-text-height"></i>
-                            <label>Font Size:</label>
-                            <select id="fontSize">
-                                <option value="13">Small</option>
-                                <option value="14" selected>Medium</option>
-                                <option value="15">Large</option>
-                                <option value="16">XL</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="common-controls">
-                        <button id="copyAllBtn" class="btn-copy">
-                            <i class="fas fa-copy"></i>
-                            <span>Copy All</span>
-                        </button>
-                        <button id="exportAllBtn" class="btn-export">
-                            <i class="fas fa-download"></i>
-                            <span>Export All</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Results Grid -->
-                <div class="results-grid">
-                    <!-- Transcript -->
-                    <div class="card">
-                        <div class="section-header">
-                            <div class="header-left">
-                                <h3><i class="fas fa-file-alt"></i> Transcript</h3>
-                                <div id="searchResults" class="search-count"></div>
-                            </div>
-                            <div class="card-controls">
-                                <div class="control-group">
-                                    <input type="text" id="searchInput" placeholder="Search transcript...">
-                                </div>
-                                <button id="copyTranscript" class="btn-copy">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                                <button id="exportTxt" class="btn-export">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="transcript" class="transcript-content">
-                            Upload audio to see real AI transcription...
-                        </div>
-                    </div>
-
-                    <!-- Summary -->
-                    <div class="card">
-                        <div class="section-header">
-                            <div class="header-left">
-                                <h3><i class="fas fa-sparkles"></i> AI Summary</h3>
-                                <p class="section-subtitle">Key points extracted from your audio</p>
-                            </div>
-                            <div class="card-controls">
-                                <button id="copySummary" class="btn-copy">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                                <button id="exportSummaryTxt" class="btn-export">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="summary" class="summary-content">
-                            AI summary will appear here after processing.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Processing Logs -->
-        <div id="processingLogs" class="processing-logs hidden">
-            <div class="logs-header">
-                <h4><i class="fas fa-terminal"></i> Processing Logs</h4>
-                <button id="closeLogs" class="close-logs">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="logsContent" class="logs-content">
-                <!-- Logs will be inserted here -->
-            </div>
+          </div>
+          
+          <div id="errorMsg" class="error-message hidden"></div>
         </div>
-    </div>
 
-   <div id="processingStatus" class="processing-status hidden">
-       <div class="status-stage active">
-           <i class="fas fa-microphone"></i>
-           <span>Uploading audio</span>
-       </div>
-       <div class="status-stage">
-           <i class="fas fa-file-alt"></i>
-           <span>Detecting speech</span>
-       </div>
-       <div class="status-stage">
-           <i class="fas fa-sparkles"></i>
-           <span>Generating results</span>
-       </div>
-   </div>
-   
+        <!-- File Info Card -->
+        <div id="fileInfoSection" class="card file-info-card hidden">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-file-audio"></i>
+            </div>
+            <div class="card-header-content">
+              <h3>Audio Player</h3>
+              <p class="card-subtitle">Playback controls</p>
+            </div>
+          </div>
+          
+          <div class="file-meta-grid">
+            <div class="file-meta-item">
+              <div class="meta-icon">
+                <i class="fas fa-file-alt"></i>
+              </div>
+              <div class="meta-content">
+                <span class="meta-label">File Name</span>
+                <span id="fileInfoName" class="meta-value">-</span>
+              </div>
+            </div>
+            <div class="file-meta-item">
+              <div class="meta-icon">
+                <i class="fas fa-weight-hanging"></i>
+              </div>
+              <div class="meta-content">
+                <span class="meta-label">File Size</span>
+                <span id="fileInfoSize" class="meta-value">-</span>
+              </div>
+            </div>
+            <div class="file-meta-item">
+              <div class="meta-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="meta-content">
+                <span class="meta-label">Uploaded</span>
+                <span id="fileInfoTime" class="meta-value">-</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Audio Player -->
+          <div class="audio-player">
+            <div class="audio-controls">
+              <button id="playPause" class="control-btn play-btn">
+                <i class="fas fa-play"></i>
+              </button>
+              <button id="skipBack" class="control-btn">
+                <i class="fas fa-step-backward"></i>
+              </button>
+              <button id="skipForward" class="control-btn">
+                <i class="fas fa-step-forward"></i>
+              </button>
+              
+              <div class="audio-progress">
+                <span id="currentTime" class="time-display">0:00</span>
+                <div class="progress-container">
+                  <input type="range" id="progressBar" min="0" max="100" value="0" class="progress-slider">
+                </div>
+                <span id="duration" class="time-display">0:00</span>
+              </div>
+              
+              <div class="audio-volume">
+                <i class="fas fa-volume-up volume-icon"></i>
+                <input type="range" id="volumeBar" min="0" max="100" value="100" class="volume-slider">
+              </div>
+            </div>
+            
+            <audio id="audioPlayer" class="native-audio" controls></audio>
+          </div>
+        </div>
+
+        <!-- Processing Logs Card -->
+        <div class="card logs-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-terminal"></i>
+            </div>
+            <div class="card-header-content">
+              <h3>Processing Logs</h3>
+              <p class="card-subtitle">Real-time updates</p>
+            </div>
+            <div class="card-actions">
+              <button id="clearLogsBtn" class="btn-icon small" title="Clear logs">
+                <i class="fas fa-eraser"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="logsContent" class="logs-content">
+            <div class="log-entry log-info">
+              <span class="log-time">[00:00:00]</span>
+              <span class="log-message">Ready to process audio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column - Results -->
+      <div class="content-column right-column">
+        <div id="results" class="results-section hidden">
+          <!-- Global Controls -->
+          <div class="global-controls">
+            <div class="controls-group">
+              <div class="control-item">
+                <label for="fontSize" class="control-label">
+                  <i class="fas fa-text-height"></i>
+                  Font Size
+                </label>
+                <select id="fontSize" class="font-select">
+                  <option value="13">Small</option>
+                  <option value="14" selected>Medium</option>
+                  <option value="15">Large</option>
+                  <option value="16">XL</option>
+                </select>
+              </div>
+              
+              <div class="control-item">
+                <button id="copyAllBtn" class="btn-secondary">
+                  <i class="fas fa-copy"></i>
+                  Copy All
+                </button>
+                <button id="exportAllBtn" class="btn-primary">
+                  <i class="fas fa-download"></i>
+                  Export All
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transcript Card -->
+          <div class="card result-card transcript-card">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="fas fa-file-alt"></i>
+              </div>
+              <div class="card-header-content">
+                <h3>Transcript</h3>
+                <div id="searchResults" class="search-count"></div>
+              </div>
+              <div class="card-actions">
+                <div class="search-box">
+                  <i class="fas fa-search search-icon"></i>
+                  <input type="text" id="searchInput" placeholder="Search transcript..." class="search-input">
+                </div>
+                <button id="copyTranscript" class="btn-icon" title="Copy">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button id="exportTxt" class="btn-icon" title="Export">
+                  <i class="fas fa-download"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div id="transcript" class="card-content scrollable-content">
+              Upload audio to see AI transcription...
+            </div>
+          </div>
+
+          <!-- Summary Card -->
+          <div class="card result-card summary-card">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="fas fa-sparkles"></i>
+              </div>
+              <div class="card-header-content">
+                <h3>AI Summary</h3>
+                <p class="card-subtitle">Key points extracted from your audio</p>
+              </div>
+              <div class="card-actions">
+                <button id="copySummary" class="btn-icon" title="Copy">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button id="exportSummaryTxt" class="btn-icon" title="Export">
+                  <i class="fas fa-download"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div id="summary" class="card-content scrollable-content">
+              <div class="summary-placeholder">
+                <i class="fas fa-brain placeholder-icon"></i>
+                <p>AI summary will appear here after processing</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-content">
+            <div class="empty-state-icon">
+              <i class="fas fa-wave-square"></i>
+            </div>
+            <h3>Upload Your First Audio</h3>
+            <p>Select an audio file to begin transcription and AI summarization</p>
+            <div class="empty-state-features">
+              <div class="feature-item">
+                <i class="fas fa-check"></i>
+                <span>Supports MP3, WAV, M4A, OGG</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-check"></i>
+                <span>Real-time processing logs</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-check"></i>
+                <span>Export & share functionality</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
     <!-- Footer -->
-    <footer class="landing-footer">
-        <div class="footer-container">
-            <div class="footer-copyright">
-                © 2026 TranscribeFlow. All rights reserved.
-            </div>
-            <div class="footer-links">
-                <a href="index.html" class="footer-link">
-                    <i class="fas fa-home"></i>
-                    <span>Home</span>
-                </a>
-            </div>
-        </div>
+    <footer class="app-footer">
+      <div class="footer-copyright">
+        © 2026 TranscribeFlow. All rights reserved.
+      </div>
     </footer>
+  </div>
 
-
-    <script src="./transcribe.js"></script>
+  <script src="./transcribe.js"></script>
 </body>
 </html>
