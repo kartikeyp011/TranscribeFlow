@@ -49,3 +49,5 @@ htmlcov/
 *.sqlite3
 
 uploads/ 
+models_cache/
+sample/
