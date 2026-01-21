@@ -1,71 +1,145 @@
-# main.py - Fixed async blocking + safe AI execution + WebSocket support
+# main.py - Corrected & Production-Safe
 
 import os
 import uuid
-import json
 import mimetypes
 import asyncio
 import logging
 from datetime import datetime
-from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket, WebSocketDisconnect
+from contextlib import asynccontextmanager
+
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from fastapi.concurrency import run_in_threadpool
-from contextlib import asynccontextmanager
-from models import pipeline
 from fastapi.middleware.cors import CORSMiddleware
 
+from models import pipeline
+
+# ---------------------------
+# Logging Setup
+# ---------------------------
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Store active WebSocket connections and processing logs
-active_connections = {}
-processing_logs = {}
+active_connections: dict[str, WebSocket] = {}
+log_queue: asyncio.Queue = asyncio.Queue()
+main_loop: asyncio.AbstractEventLoop | None = None
 
+# ---------------------------
+# WebSocket Log Handler
+# ---------------------------
+class WebSocketLogHandler(logging.Handler):
+    def emit(self, record):
+        if record.levelno != logging.INFO or not main_loop:
+            return
+        try:
+            msg = self.format(record)
+            main_loop.call_soon_threadsafe(
+                log_queue.put_nowait,
+                (msg, record.levelname),
+            )
+        except Exception:
+            pass
+
+
+ws_handler = WebSocketLogHandler()
+ws_handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
+logging.getLogger().addHandler(ws_handler)
+
+# ---------------------------
+# Background Log Dispatcher
+# ---------------------------
+async def process_log_queue():
+    while True:
+        msg, level = await log_queue.get()
+        dead = []
+        for rid, ws in active_connections.items():
+            try:
+                await ws.send_json(
+                    {
+                        "type": "log",
+                        "message": msg,
+                        "level": level.lower(),
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                )
+            except Exception:
+                dead.append(rid)
+
+        for rid in dead:
+            active_connections.pop(rid, None)
+
+
+# ---------------------------
+# Lifespan
+# ---------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global main_loop
+    main_loop = asyncio.get_running_loop()
+    log_task = asyncio.create_task(process_log_queue())
     yield
+    log_task.cancel()
     active_connections.clear()
-    processing_logs.clear()
 
-app = FastAPI(title="TranscribeFlow", version="2.1", lifespan=lifespan)
 
-# Add CORS middleware
+app = FastAPI(
+    title="TranscribeFlow",
+    version="2.1",
+    lifespan=lifespan,
+)
+
+# ---------------------------
+# Middleware
+# ---------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Create necessary directories
-os.makedirs("uploads", exist_ok=True)
-os.makedirs("frontend", exist_ok=True)
+# ---------------------------
+# Storage
+# ---------------------------
+UPLOAD_DIR = "uploads"
+FRONTEND_DIR = "frontend"
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(FRONTEND_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".mp3", ".wav", ".m4a", ".flac", ".ogg"}
-MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB
+MAX_FILE_SIZE = 25 * 1024 * 1024
+MAX_RECENT = 20
 
-# Store recent files (in-memory)
-recent_files = []
+recent_files: list[dict] = []
 
 # ---------------------------
-# WebSocket for live logs
+# WebSocket Logs
 # ---------------------------
 @app.websocket("/ws/logs/{request_id}")
-async def websocket_logs(websocket: WebSocket, request_id: str):
-    await websocket.accept()
-    active_connections[request_id] = websocket
+async def websocket_logs(ws: WebSocket, request_id: str):
+    await ws.accept()
+    active_connections[request_id] = ws
+    logger.info(f"WebSocket connected [{request_id}]")
 
     try:
         while True:
-            data = await websocket.receive_text()
-            if data == "ping":
-                await websocket.send_json({"type": "pong"})
+            await ws.receive_text()
     except WebSocketDisconnect:
         pass
     finally:
         active_connections.pop(request_id, None)
+        logger.info(f"WebSocket disconnected [{request_id}]")
 
 
 # ---------------------------
@@ -73,60 +147,53 @@ async def websocket_logs(websocket: WebSocket, request_id: str):
 # ---------------------------
 @app.post("/api/upload")
 async def upload_audio(file: UploadFile = File(...)):
-    logger.info("🚀 /api/upload endpoint HIT")
     request_id = str(uuid.uuid4())
-    timestamp = datetime.now().isoformat()
+    logger.info("Upload started")
 
-    _, ext = os.path.splitext(file.filename)
-    ext = ext.lower()
+    ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid format. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
-        )
+        raise HTTPException(400, "Unsupported file format")
 
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large (max 25MB)")
+        raise HTTPException(413, "File too large")
 
     safe_name = f"{uuid.uuid4().hex[:8]}_{file.filename}"
-    save_path = os.path.join("uploads", safe_name)
+    save_path = os.path.join(UPLOAD_DIR, safe_name)
 
     with open(save_path, "wb") as f:
         f.write(content)
 
-    logger.info(f"🎙️ Processing {file.filename}...")
-
     try:
-        # Run AI in background thread (prevents server hang)
-        transcript = await run_in_threadpool(pipeline.transcribe, content)
-        summary = await run_in_threadpool(pipeline.summarize, transcript)
-
-        logger.info("✅ Processing complete!")
-
+        transcript = await run_in_threadpool(
+            pipeline.transcribe, save_path
+        )
+        summary = await run_in_threadpool(
+            pipeline.summarize, transcript
+        )
+        logger.info("AI processing complete")
     except Exception as e:
-        logger.error(f"AI Processing failed: {e}")
-        transcript = "Transcription failed."
-        summary = "Summary generation failed."
+        logger.exception("AI processing failed")
+        transcript = "Transcription failed"
+        summary = "Summary failed"
 
-    recent_files.insert(0, {
+    record = {
         "filename": file.filename,
         "saved_as": safe_name,
-        "size_mb": round(len(content) / (1024 * 1024), 1),
-        "uploaded": timestamp,
-        "audio_url": f"/api/stream/{safe_name}"
-    })
+        "size_mb": round(len(content) / (1024 * 1024), 2),
+        "uploaded": datetime.now().isoformat(),
+        "audio_url": f"/api/stream/{safe_name}",
+    }
+
+    recent_files.insert(0, record)
+    del recent_files[MAX_RECENT:]
 
     return {
-        "filename": file.filename,
-        "saved_as": safe_name,
-        "size_mb": round(len(content) / (1024 * 1024), 1),
-        "uploaded": timestamp,
-        "audio_url": f"/api/stream/{safe_name}",
+        **record,
         "transcript": transcript,
         "summary": summary,
+        "request_id": request_id,
         "status": "success",
-        "request_id": request_id
     }
 
 
@@ -135,54 +202,53 @@ async def upload_audio(file: UploadFile = File(...)):
 # ---------------------------
 @app.get("/api/stream/{filename}")
 async def stream_audio(filename: str):
-    file_path = os.path.join("uploads", filename)
+    path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(path):
+        raise HTTPException(404, "File not found")
 
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
+    mime, _ = mimetypes.guess_type(path)
 
-    mime_type, _ = mimetypes.guess_type(file_path)
-
-    def iterfile():
-        with open(file_path, mode="rb") as file:
-            yield from file
+    def file_iter():
+        with open(path, "rb") as f:
+            yield from f
 
     return StreamingResponse(
-        iterfile(),
-        media_type=mime_type or "audio/mpeg",
-        headers={"Accept-Ranges": "bytes"}
+        file_iter(),
+        media_type=mime or "audio/mpeg",
+        headers={"Accept-Ranges": "bytes"},
     )
 
 
 # ---------------------------
-# Recent uploads
+# Recent Uploads
 # ---------------------------
 @app.get("/api/recent")
-async def get_recent():
+async def recent():
     return {"recent_files": recent_files}
 
 
 # ---------------------------
-# Clear uploads
+# Clear Uploads
 # ---------------------------
 @app.delete("/api/clear-all")
 async def clear_all():
-    cleared_count = 0
-    for filename in os.listdir("uploads"):
+    count = 0
+    for f in os.listdir(UPLOAD_DIR):
         try:
-            os.remove(os.path.join("uploads", filename))
-            cleared_count += 1
+            os.remove(os.path.join(UPLOAD_DIR, f))
+            count += 1
         except Exception:
             pass
-
     recent_files.clear()
-    return {"cleared": cleared_count}
+    return {"cleared": count}
 
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "recent_count": len(recent_files)}
+    return {"status": "ok"}
+
 
 # ---------------------------
-# Serve Frontend
+# Frontend
 # ---------------------------
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

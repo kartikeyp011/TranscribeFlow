@@ -1244,3 +1244,52 @@ mark {
     max-width: none;
   }
 }
+
+.logo-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+
+.logo-link,
+.logo-link:visited,
+.logo-link:hover,
+.logo-link:active,
+.logo-link:focus {
+    text-decoration: none !important;
+    color: inherit !important;
+}
+
+/* Hide custom audio controls but preserve layout */
+.audio-controls > button,
+.audio-progress,
+.audio-volume {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Remove all custom controls completely from layout */
+.audio-controls > button,
+.audio-progress,
+.audio-volume {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Ensure audio-controls no longer compress content */
+.audio-controls {
+  display: block;
+  position: relative;
+}
+
+/* Make native audio full-width and stable */
+.native-audio-wrapper {
+  width: 100%;
+}
+
+.native-audio {
+  width: 100%;
+  display: block;
+}

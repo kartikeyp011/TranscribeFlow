@@ -78,34 +78,65 @@ class TranscribeFlowPipeline:
     # ---------------------------
     # Audio Preprocessing
     # ---------------------------
-    def preprocess_audio(self, audio_bytes: bytes) -> io.BytesIO:
-        """Convert to 16kHz mono WAV (Whisper requirement)"""
-
-        audio = pydub.AudioSegment.from_file(io.BytesIO(audio_bytes))
-        audio = audio.set_frame_rate(16000).set_channels(1)
-
-        buffer = io.BytesIO()
-        audio.export(buffer, format="wav")
-        buffer.seek(0)
-        return buffer
+    def preprocess_audio(self, audio_bytes: bytes):
+        audio = pydub.AudioSegment.from_file(
+            io.BytesIO(audio_bytes)
+        )
+        return audio
 
     # ---------------------------
     # Transcription
     # ---------------------------
-    def transcribe(self, audio_bytes: bytes) -> str:
-        processed_audio = self.preprocess_audio(audio_bytes)
+    def transcribe(self, audio_input):
+        import os
 
-        segments, _ = self.asr_model.transcribe(
-            processed_audio,
+        if isinstance(audio_input, str):
+            if not os.path.exists(audio_input):
+                raise ValueError(f"Audio file not found: {audio_input}")
+            with open(audio_input, "rb") as f:
+                audio_bytes = f.read()
+
+        elif isinstance(audio_input, (bytes, bytearray)):
+            audio_bytes = audio_input
+
+        else:
+            raise TypeError(f"Unsupported audio_input type: {type(audio_input)}")
+
+        processed_audio = self.preprocess_audio(audio_bytes)
+        return self.run_whisper(processed_audio)
+
+
+    def run_whisper(self, audio_segment):
+        """
+        Correctly prepare audio for faster-whisper
+        """
+
+        import numpy as np
+
+        # Ensure mono
+        if audio_segment.channels > 1:
+            audio_segment = audio_segment.set_channels(1)
+
+        # Ensure 16kHz sample rate
+        audio_segment = audio_segment.set_frame_rate(16000)
+
+        # Convert to float32 numpy array
+        samples = np.array(audio_segment.get_array_of_samples())
+        audio_np = samples.astype(np.float32) / 32768.0
+
+        segments, info = self.asr_model.transcribe(
+            audio_np,
+            language="en",
             beam_size=5,
-            language=None,
-            task="transcribe"
+            vad_filter=True
         )
 
-        transcript = " ".join(segment.text for segment in segments)
+        text = []
+        for segment in segments:
+            text.append(segment.text.strip())
 
-        logger.info(f"✅ Transcribed: {len(transcript)} characters")
-        return transcript.strip()
+        return " ".join(text)
+
 
     # ---------------------------
     # Summarization

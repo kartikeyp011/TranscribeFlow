@@ -156,7 +156,7 @@ class TranscribeFlow {
     }
 
     validateFile(file) {
-        const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/ogg', 'audio/x-m4a'];
+        const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/ogg', 'audio/x-m4a', 'audio/mpeg'];
         const maxSize = 25 * 1024 * 1024; // 25MB
         
         return validTypes.includes(file.type) && file.size <= maxSize;
@@ -183,8 +183,12 @@ class TranscribeFlow {
         this.showProcessing();
         this.clearLogs();
         
-        // Generate request ID for WebSocket
+        // Generate request ID and connect WebSocket BEFORE uploading
         this.requestId = this.generateRequestId();
+        this.connectWebSocket(this.requestId);
+        
+        // Wait a bit for WebSocket to connect
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         try {
             const formData = new FormData();
@@ -192,9 +196,6 @@ class TranscribeFlow {
             
             this.addLog(`📤 Uploading "${file.name}"...`, 'info');
             this.updateProgress(10);
-            
-            // Connect to WebSocket for real-time logs
-            this.connectWebSocket(this.requestId);
             
             // Upload file
             const response = await fetch('/api/upload', {
@@ -208,24 +209,12 @@ class TranscribeFlow {
             }
             
             const data = await response.json();
-            
-            // Use request_id from response if available
-            if (data.request_id) {
-                this.requestId = data.request_id;
-            }
-            
             this.currentFile = data;
-            this.updateProgress(50);
-            
-            this.addLog('✅ File uploaded successfully', 'success');
-            this.addLog('🎙️ Processing audio with AI...', 'info');
             
             // Display results
             await this.displayResults(data);
             
             this.updateProgress(100);
-            this.addLog('🎉 Processing completed!', 'success');
-            
             this.showToast('Audio processing complete!', 'success');
             
         } catch (error) {
@@ -244,7 +233,7 @@ class TranscribeFlow {
                     this.ws.close();
                     this.ws = null;
                 }
-            }, 5000);
+            }, 2000);
         }
     }
 
@@ -294,46 +283,23 @@ class TranscribeFlow {
     handleLogMessage(data) {
         const { message, level = 'info' } = data;
         
-        // Parse and format the message
-        const formatted = this.formatLogMessage(message);
-        
-        // Add to logs
-        this.addLog(formatted.text, level);
+        // Add to logs directly
+        this.addLog(message, level);
         
         // Update progress based on log content
-        if (message.includes('transcribing') || message.includes('Transcribing')) {
+        if (message.includes('Processing') && (message.includes('.wav') || message.includes('.mp3') || message.includes('.m4a'))) {
+            this.updateProgress(30);
+        } else if (message.includes('Processing audio with duration')) {
+            this.updateProgress(50);
+        } else if (message.includes('Detected language')) {
             this.updateProgress(60);
-        } else if (message.includes('summarizing') || message.includes('Summarizing')) {
-            this.updateProgress(80);
-        } else if (message.includes('complete') || message.includes('Complete')) {
+        } else if (message.includes('Transcribed')) {
+            this.updateProgress(75);
+        } else if (message.includes('Summary generated')) {
+            this.updateProgress(90);
+        } else if (message.includes('Processing complete')) {
             this.updateProgress(95);
         }
-    }
-
-    formatLogMessage(message) {
-        // Clean up common prefixes
-        let cleanMessage = message
-            .replace(/^INFO:[^:]*:/, '')
-            .replace(/^DEBUG:[^:]*:/, '')
-            .replace(/^ERROR:[^:]*:/, '')
-            .trim();
-        
-        // Add emojis based on content
-        if (cleanMessage.includes('upload') || cleanMessage.includes('Upload')) {
-            cleanMessage = `📤 ${cleanMessage}`;
-        } else if (cleanMessage.includes('transcri') || cleanMessage.includes('Transcri')) {
-            cleanMessage = `🎙️ ${cleanMessage}`;
-        } else if (cleanMessage.includes('summar') || cleanMessage.includes('Summar')) {
-            cleanMessage = `🧠 ${cleanMessage}`;
-        } else if (cleanMessage.includes('complete') || cleanMessage.includes('Complete')) {
-            cleanMessage = `✅ ${cleanMessage}`;
-        } else if (cleanMessage.includes('error') || cleanMessage.includes('Error')) {
-            cleanMessage = `❌ ${cleanMessage}`;
-        } else if (cleanMessage.includes('warning') || cleanMessage.includes('Warning')) {
-            cleanMessage = `⚠️ ${cleanMessage}`;
-        }
-        
-        return { text: cleanMessage };
     }
 
     setupWebSocketFallback() {
@@ -460,11 +426,22 @@ class TranscribeFlow {
     }
 
     updateAudioProgress() {
-        if (this.elements.audioPlayer.duration) {
-            const progress = (this.elements.audioPlayer.currentTime / this.elements.audioPlayer.duration) * 100;
-            this.elements.progressBar.value = progress;
-            this.elements.currentTimeEl.textContent = this.formatTime(this.elements.audioPlayer.currentTime);
+        const audio = this.elements.audioPlayer;
+
+        if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
+            this.elements.currentTimeEl.textContent = '0:00';
+            this.elements.durationEl.textContent = '0:00';
+            return;
         }
+
+        const progress = (audio.currentTime / audio.duration) * 100;
+
+        if (Number.isFinite(progress)) {
+            this.elements.progressBar.value = progress;
+        }
+
+        this.elements.currentTimeEl.textContent = this.formatTime(audio.currentTime);
+        this.elements.durationEl.textContent = this.formatTime(audio.duration);
     }
 
     handleAudioEnd() {
@@ -718,8 +695,10 @@ class TranscribeFlow {
 
     // Utilities
     formatTime(seconds) {
-        if (isNaN(seconds)) return '0:00';
-        
+        if (!Number.isFinite(seconds) || seconds < 0) {
+            return '0:00';
+        }
+
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;

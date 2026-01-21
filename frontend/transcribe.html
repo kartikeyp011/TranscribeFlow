@@ -16,8 +16,12 @@
     <nav class="app-nav">
       <div class="nav-container">
         <div class="nav-logo">
-          <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
-          <span class="nav-subtitle">Audio Transcription & AI Summary</span>
+        <a href="index.html" class="logo-link">
+            <span class="logo-text">
+                Transcribe<span class="logo-accent">Flow</span>
+            </span>
+        </a>
+        <span class="nav-subtitle">Audio Transcription & AI Summary</span>
         </div>
         <div class="nav-actions">
           <button id="clearAllBtn" class="nav-cta secondary">
@@ -139,6 +143,11 @@
               <button id="skipForward" class="control-btn">
                 <i class="fas fa-step-forward"></i>
               </button>
+
+              
+              <div class="native-audio-wrapper">
+                <audio id="audioPlayer" class="native-audio" controls></audio>
+              </div>
               
               <div class="audio-progress">
                 <span id="currentTime" class="time-display">0:00</span>
@@ -154,7 +163,6 @@
               </div>
             </div>
             
-            <audio id="audioPlayer" class="native-audio" controls></audio>
           </div>
         </div>
 
@@ -196,10 +204,10 @@
                   Font Size
                 </label>
                 <select id="fontSize" class="font-select">
-                  <option value="13">Small</option>
+                  <option value="12">Small</option>
                   <option value="14" selected>Medium</option>
                   <option value="15">Large</option>
-                  <option value="16">XL</option>
+                  <option value="20">XL</option>
                 </select>
               </div>
               
