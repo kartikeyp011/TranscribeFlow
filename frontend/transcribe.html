@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,18 +11,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="app-container">
     <!-- Navigation -->
     <nav class="app-nav">
       <div class="nav-container">
         <div class="nav-logo">
-        <a href="index.html" class="logo-link">
+          <a href="index.html" class="logo-link">
             <span class="logo-text">
-                Transcribe<span class="logo-accent">Flow</span>
+              Transcribe<span class="logo-accent">Flow</span>
             </span>
-        </a>
-        <span class="nav-subtitle">Audio Transcription & AI Summary</span>
+          </a>
+          <span class="nav-subtitle">Audio Transcription & AI Summary</span>
         </div>
         <div class="nav-actions">
           <button id="clearAllBtn" class="nav-cta secondary">
@@ -51,8 +53,44 @@
               <p class="card-subtitle">Upload your audio file for transcription</p>
             </div>
           </div>
-          
+
           <form id="uploadForm" class="upload-form">
+            <!-- Language Selection -->
+            <div class="language-input-section">
+              <label for="inputLanguage" class="input-language-label">
+                <i class="fas fa-globe"></i>
+                <span>Audio Language</span>
+              </label>
+              <select id="inputLanguage" class="input-language-select">
+                <option value="en">English</option>
+                <option value="hi">Hindi (हिन्दी)</option>
+                <option value="es">Spanish (Español)</option>
+                <option value="fr">French (Français)</option>
+                <option value="de">German (Deutsch)</option>
+                <option value="zh">Chinese (中文)</option>
+                <option value="ja">Japanese (日本語)</option>
+                <option value="ko">Korean (한국어)</option>
+                <option value="ar">Arabic (العربية)</option>
+                <option value="ru">Russian (Русский)</option>
+                <option value="pt">Portuguese (Português)</option>
+                <option value="bn">Bengali (বাংলা)</option>
+                <option value="te">Telugu (తెలుగు)</option>
+                <option value="mr">Marathi (मराठी)</option>
+                <option value="ta">Tamil (தமிழ்)</option>
+                <option value="ur">Urdu (اردو)</option>
+                <option value="it">Italian (Italiano)</option>
+                <option value="nl">Dutch (Nederlands)</option>
+                <option value="tr">Turkish (Türkçe)</option>
+                <option value="vi">Vietnamese (Tiếng Việt)</option>
+                <option value="th">Thai (ไทย)</option>
+                <option value="id">Indonesian (Bahasa Indonesia)</option>
+              </select>
+              <p class="language-hint">
+                <i class="fas fa-info-circle"></i>
+                Select the language spoken in your audio file for better accuracy
+              </p>
+            </div>
+            
             <div class="dropzone" id="dropzone">
               <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg">
               <div class="dropzone-content">
@@ -66,14 +104,14 @@
               </div>
               <div id="fileName" class="file-name-preview"></div>
             </div>
-            
+
             <button type="submit" id="processBtn" class="btn-primary">
               <span id="processBtnText">Process Audio</span>
               <i class="fas fa-magic"></i>
               <i id="processingSpinner" class="fas fa-spinner fa-spin hidden"></i>
             </button>
           </form>
-          
+
           <div id="loading" class="loading-indicator hidden">
             <div class="loading-spinner"></div>
             <div class="loading-content">
@@ -85,7 +123,7 @@
               </div>
             </div>
           </div>
-          
+
           <div id="errorMsg" class="error-message hidden"></div>
         </div>
 
@@ -100,7 +138,7 @@
               <p class="card-subtitle">Playback controls</p>
             </div>
           </div>
-          
+
           <div class="file-meta-grid">
             <div class="file-meta-item">
               <div class="meta-icon">
@@ -130,7 +168,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Audio Player -->
           <div class="audio-player">
             <div class="audio-controls">
@@ -144,11 +182,11 @@
                 <i class="fas fa-step-forward"></i>
               </button>
 
-              
+
               <div class="native-audio-wrapper">
                 <audio id="audioPlayer" class="native-audio" controls></audio>
               </div>
-              
+
               <div class="audio-progress">
                 <span id="currentTime" class="time-display">0:00</span>
                 <div class="progress-container">
@@ -156,13 +194,13 @@
                 </div>
                 <span id="duration" class="time-display">0:00</span>
               </div>
-              
+
               <div class="audio-volume">
                 <i class="fas fa-volume-up volume-icon"></i>
                 <input type="range" id="volumeBar" min="0" max="100" value="100" class="volume-slider">
               </div>
             </div>
-            
+
           </div>
         </div>
 
@@ -182,7 +220,7 @@
               </button>
             </div>
           </div>
-          
+
           <div id="logsContent" class="logs-content">
             <div class="log-entry log-info">
               <span class="log-time">[00:00:00]</span>
@@ -210,7 +248,7 @@
                   <option value="20">XL</option>
                 </select>
               </div>
-              
+
               <div class="control-item">
                 <button id="copyAllBtn" class="btn-secondary">
                   <i class="fas fa-copy"></i>
@@ -235,6 +273,26 @@
                 <div id="searchResults" class="search-count"></div>
               </div>
               <div class="card-actions">
+                <div class="language-controls">
+                  <select id="targetLanguage" class="language-select">
+                    <option value="">Translate to...</option>
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="hi">Hindi</opton>
+                    <option value="zh-cn">Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ar">Arabic</option>
+                    <option value="ru">Russian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="it">Italian</option>
+                    <option value="ko">Korean</option>
+                  </select>
+                  <button id="translateBtn" class="btn-icon" title="Translate">
+                    <i class="fas fa-language"></i>
+                  </button>
+                </div>
                 <div class="search-box">
                   <i class="fas fa-search search-icon"></i>
                   <input type="text" id="searchInput" placeholder="Search transcript..." class="search-input">
@@ -247,9 +305,37 @@
                 </button>
               </div>
             </div>
-            
+
             <div id="transcript" class="card-content scrollable-content">
               Upload audio to see AI transcription...
+            </div>
+          </div>
+
+          <!-- Translated Transcript Card -->
+          <div id="translatedTranscriptCard" class="card result-card translated-card hidden">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="fas fa-language"></i>
+              </div>
+              <div class="card-header-content">
+                <h3>Translated Transcript</h3>
+                <p class="card-subtitle" id="translationInfo">Translation will appear here</p>
+              </div>
+              <div class="card-actions">
+                <button id="copyTranslated" class="btn-icon" title="Copy">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button id="exportTranslated" class="btn-icon" title="Export">
+                  <i class="fas fa-download"></i>
+                </button>
+                <button id="closeTranslation" class="btn-icon" title="Close">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+
+            <div id="translatedTranscript" class="card-content scrollable-content">
+              Select a language and click translate...
             </div>
           </div>
 
@@ -272,7 +358,7 @@
                 </button>
               </div>
             </div>
-            
+
             <div id="summary" class="card-content scrollable-content">
               <div class="summary-placeholder">
                 <i class="fas fa-brain placeholder-icon"></i>
@@ -281,7 +367,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Empty State -->
         <div id="emptyState" class="empty-state">
           <div class="empty-state-content">
@@ -322,4 +408,5 @@
 
   <script src="./transcribe.js"></script>
 </body>
+
 </html>

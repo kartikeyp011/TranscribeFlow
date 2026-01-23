@@ -12,16 +12,32 @@ from fastapi import (
     FastAPI,
     UploadFile,
     File,
+    Form,
     HTTPException,
     WebSocket,
     WebSocketDisconnect,
 )
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-
+from pydantic import BaseModel
+from typing import Optional
 from models import pipeline
+
+
+# ---------------------------
+# Request/Response Models
+# ---------------------------
+class TranslateRequest(BaseModel):
+    text: str
+    source_lang: str = 'auto'
+    target_lang: str = 'en'
+
+class DetectLanguageRequest(BaseModel):
+    text: str
+
 
 # ---------------------------
 # Logging Setup
@@ -146,9 +162,12 @@ async def websocket_logs(ws: WebSocket, request_id: str):
 # Upload & AI Processing
 # ---------------------------
 @app.post("/api/upload")
-async def upload_audio(file: UploadFile = File(...)):
+async def upload_audio(
+    file: UploadFile = File(...),
+    language: str = Form("en")
+):
     request_id = str(uuid.uuid4())
-    logger.info("Upload started")
+    logger.info(f"Upload started (Language: {language})")
 
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -165,9 +184,13 @@ async def upload_audio(file: UploadFile = File(...)):
         f.write(content)
 
     try:
-        transcript = await run_in_threadpool(
-            pipeline.transcribe, save_path
+        logger.info(f"🌐 Processing audio with language: {language}")
+        
+        result = await run_in_threadpool(
+            pipeline.transcribe, save_path, language
         )
+        transcript = result.get('text', result) if isinstance(result, dict) else result
+        
         summary = await run_in_threadpool(
             pipeline.summarize, transcript
         )
@@ -242,6 +265,48 @@ async def clear_all():
     recent_files.clear()
     return {"cleared": count}
 
+
+
+
+# ---------------------------
+# Language Detection
+# ---------------------------
+@app.post("/api/detect-language")
+async def detect_language(request: DetectLanguageRequest):
+    try:
+        result = await run_in_threadpool(
+            pipeline.detect_language, request.text
+        )
+        return {
+            "status": "success",
+            "language": result
+        }
+    except Exception as e:
+        logger.exception("Language detection failed")
+        raise HTTPException(500, f"Language detection failed: {str(e)}")
+
+# ---------------------------
+# Translation
+# ---------------------------
+@app.post("/api/translate")
+async def translate_text(request: TranslateRequest):
+    try:
+        logger.info(f"Translation request: {request.source_lang} -> {request.target_lang}")
+        
+        result = await run_in_threadpool(
+            pipeline.translate_text,
+            request.text,
+            request.source_lang,
+            request.target_lang
+        )
+        
+        return {
+            "status": "success",
+            **result
+        }
+    except Exception as e:
+        logger.exception("Translation failed")
+        raise HTTPException(500, f"Translation failed: {str(e)}")
 
 @app.get("/api/health")
 async def health():

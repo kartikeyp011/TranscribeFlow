@@ -4,6 +4,16 @@ import logging
 import pydub
 from faster_whisper import WhisperModel
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
+import numpy as np
+from deep_translator import GoogleTranslator
+
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+
+from dotenv import load_dotenv
+# Load environment variables from .env file
+load_dotenv()
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -75,6 +85,13 @@ class TranscribeFlowPipeline:
 
         logger.info("✅ Summarization model ready!")
 
+        # ---------------------------
+        # Initialize Translator
+        # ---------------------------
+        logger.info("🌐 Initializing translation service...")
+        self.translator_cache = {}
+        logger.info("✅ Translation service ready!")
+
     # ---------------------------
     # Audio Preprocessing
     # ---------------------------
@@ -87,8 +104,7 @@ class TranscribeFlowPipeline:
     # ---------------------------
     # Transcription
     # ---------------------------
-    def transcribe(self, audio_input):
-        import os
+    def transcribe(self, audio_input, language="en"):
 
         if isinstance(audio_input, str):
             if not os.path.exists(audio_input):
@@ -103,15 +119,14 @@ class TranscribeFlowPipeline:
             raise TypeError(f"Unsupported audio_input type: {type(audio_input)}")
 
         processed_audio = self.preprocess_audio(audio_bytes)
-        return self.run_whisper(processed_audio)
+        return self.run_whisper(processed_audio, language)
 
 
-    def run_whisper(self, audio_segment):
+    def run_whisper(self, audio_segment, language="en"):
         """
-        Correctly prepare audio for faster-whisper
-        """
-
-        import numpy as np
+        Correctly prepare audio for faster-whisper with language support
+        """        
+        logger.info(f"🎙️ Transcribing with language: {language}")
 
         # Ensure mono
         if audio_segment.channels > 1:
@@ -126,11 +141,13 @@ class TranscribeFlowPipeline:
 
         segments, info = self.asr_model.transcribe(
             audio_np,
-            language="en",
+            language=language,
             beam_size=5,
             vad_filter=True
         )
 
+        logger.info(f"✅ Transcription complete (Detected: {info.language if hasattr(info, 'language') else language})")
+        
         text = []
         for segment in segments:
             text.append(segment.text.strip())
@@ -151,6 +168,7 @@ class TranscribeFlowPipeline:
                     result = self.summarizer(
                         chunk,
                         max_length=max_length // len(chunks),
+                        max_new_tokens=None,
                         min_length=30,
                         do_sample=False
                     )
@@ -159,12 +177,16 @@ class TranscribeFlowPipeline:
                 summary = " ".join(summaries)
 
             else:
+                max_len = min(max_length, max(30, len(transcript) // 2))
+
                 result = self.summarizer(
                     transcript,
-                    max_length=max_length,
-                    min_length=50,
+                    max_length=max_len,
+                    max_new_tokens=None,
+                    min_length=20,
                     do_sample=False
                 )
+
                 summary = result[0]['summary_text']
 
             bullet_points = summary.replace('. ', '.\n• ')
@@ -178,6 +200,100 @@ class TranscribeFlowPipeline:
             sentences = transcript.split('. ')
             summary = ". ".join(sentences[:4]) + "..."
             return f"**Summary:**\n{summary}"
+
+    
+    # ---------------------------
+    # Language Detection
+    # ---------------------------
+    def detect_language(self, text: str) -> dict:
+        """
+        Detect language from transcribed text using Whisper's detected language
+        Returns: dict with 'code' and 'name'
+        """
+        try:
+            # Whisper already detected language during transcription
+            # For now we'll use a simple heuristic
+            # You can enhance this with langdetect library later
+            
+            # Common language patterns
+            if any(char in text for char in ['ä', 'ö', 'ü', 'ß']):
+                return {'code': 'de', 'name': 'German'}
+            elif any(char in text for char in ['é', 'è', 'ê', 'à', 'ç']):
+                return {'code': 'fr', 'name': 'French'}
+            elif any(char in text for char in ['ñ', '¿', '¡']):
+                return {'code': 'es', 'name': 'Spanish'}
+            elif any(char in text for char in ['а', 'б', 'в', 'г', 'д']):
+                return {'code': 'ru', 'name': 'Russian'}
+            elif any(char in text for char in ['你', '我', '的', '是']):
+                return {'code': 'zh-cn', 'name': 'Chinese'}
+            elif any(char in text for char in ['の', 'は', 'を', 'に']):
+                return {'code': 'ja', 'name': 'Japanese'}
+            else:
+                return {'code': 'en', 'name': 'English'}
+                
+        except Exception as e:
+            logger.error(f"Language detection failed: {e}")
+            return {'code': 'en', 'name': 'English'}
+
+    
+    # ---------------------------
+    # Translation
+    # ---------------------------
+    def translate_text(self, text: str, source_lang: str = 'auto', target_lang: str = 'en') -> dict:
+        """
+        Translate text to target language
+        Returns: dict with 'original', 'translated', 'source_lang', 'target_lang'
+        """
+        try:
+            logger.info(f"🌐 Translating from {source_lang} to {target_lang}...")
+            
+            # Handle case where source and target are same
+            if source_lang == target_lang and source_lang != 'auto':
+                return {
+                    'original': text,
+                    'translated': text,
+                    'source_lang': source_lang,
+                    'target_lang': target_lang,
+                    'message': 'Source and target languages are the same'
+                }
+            
+            # Initialize translator
+            translator = GoogleTranslator(source=source_lang, target=target_lang)
+            
+            # For long texts, split into chunks
+            if len(text) > 4500:
+                chunks = [text[i:i + 4500] for i in range(0, len(text), 4000)]
+                translated_chunks = []
+                
+                for i, chunk in enumerate(chunks):
+                    logger.info(f"Translating chunk {i+1}/{len(chunks)}...")
+                    translated_chunk = translator.translate(chunk)
+                    translated_chunks.append(translated_chunk)
+                
+                translated_text = ' '.join(translated_chunks)
+            else:
+                translated_text = translator.translate(text[:5000])
+            
+            logger.info("✅ Translation complete")
+            
+            return {
+                'original': text,
+                'translated': translated_text,
+                'source_lang': source_lang,
+                'target_lang': target_lang,
+                'success': True
+            }
+            
+        except Exception as e:
+            logger.error(f"Translation failed: {e}")
+            return {
+                'original': text,
+                'translated': text,
+                'source_lang': source_lang,
+                'target_lang': target_lang,
+                'success': False,
+                'error': str(e)
+            }
 
 
 # ---------------------------
