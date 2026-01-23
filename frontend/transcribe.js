@@ -1,5 +1,5 @@
 // TranscribeFlow - Modern Audio Transcription App
-// Enhanced with real WebSocket logging and improved UX
+// Enhanced with improved transcript UI/UX
 
 class TranscribeFlow {
     constructor() {
@@ -8,6 +8,11 @@ class TranscribeFlow {
         this.ws = null;
         this.requestId = null;
         this.logs = [];
+        this.playbackSpeed = 1.0;
+        this.searchResults = [];
+        this.currentSearchIndex = -1;
+        this.isReading = false;
+        this.speechSynthesis = window.speechSynthesis;
 
         this.initializeElements();
         this.setupEventListeners();
@@ -36,7 +41,10 @@ class TranscribeFlow {
             fileInfoName: document.getElementById('fileInfoName'),
             fileInfoSize: document.getElementById('fileInfoSize'),
             fileInfoTime: document.getElementById('fileInfoTime'),
+            fileInfoLanguage: document.getElementById('fileInfoLanguage'),
+            playerEmptyState: document.getElementById('playerEmptyState'),
 
+            // Audio Player Elements
             audioPlayer: document.getElementById('audioPlayer'),
             playPauseBtn: document.getElementById('playPause'),
             skipBackBtn: document.getElementById('skipBack'),
@@ -45,6 +53,8 @@ class TranscribeFlow {
             currentTimeEl: document.getElementById('currentTime'),
             durationEl: document.getElementById('duration'),
             volumeBar: document.getElementById('volumeBar'),
+            speedControlBtn: document.getElementById('speedControl'),
+            downloadAudioBtn: document.getElementById('downloadAudio'),
 
             // Results Section
             resultsSection: document.getElementById('results'),
@@ -54,16 +64,31 @@ class TranscribeFlow {
             fontSizeSelect: document.getElementById('fontSize'),
             searchInput: document.getElementById('searchInput'),
             searchResults: document.getElementById('searchResults'),
+            wordCount: document.getElementById('wordCount'),
+
+            // Search Controls
+            searchPrevBtn: document.getElementById('searchPrev'),
+            searchNextBtn: document.getElementById('searchNext'),
+            clearSearchBtn: document.getElementById('clearSearch'),
+
+            // Scroll Controls
+            scrollToTopBtn: document.getElementById('scrollToTop'),
+            scrollToBottomBtn: document.getElementById('scrollToBottom'),
+
+            // Read Aloud
+            speakTranscriptBtn: document.getElementById('speakTranscript'),
 
             // Translation Elements
             targetLanguageSelect: document.getElementById('targetLanguage'),
             translateBtn: document.getElementById('translateBtn'),
             translatedTranscriptCard: document.getElementById('translatedTranscriptCard'),
             translatedTranscript: document.getElementById('translatedTranscript'),
-            translationInfo: document.getElementById('translationInfo'),
+            translatedSummaryCard: document.getElementById('translatedSummaryCard'),
+            translatedSummary: document.getElementById('translatedSummary'),
             copyTranslatedBtn: document.getElementById('copyTranslated'),
-            exportTranslatedBtn: document.getElementById('exportTranslated'),
             closeTranslationBtn: document.getElementById('closeTranslation'),
+            copyTranslatedSummaryBtn: document.getElementById('copyTranslatedSummary'),
+            translationInfo: document.getElementById('translationInfo'),
 
             // Control Buttons
             copyTranscriptBtn: document.getElementById('copyTranscript'),
@@ -100,21 +125,37 @@ class TranscribeFlow {
         this.elements.skipForwardBtn.addEventListener('click', () => this.skip(10));
         this.elements.progressBar.addEventListener('input', (e) => this.seekAudio(e));
         this.elements.volumeBar.addEventListener('input', (e) => this.adjustVolume(e));
+        this.elements.speedControlBtn.addEventListener('click', () => this.togglePlaybackSpeed());
+        this.elements.downloadAudioBtn.addEventListener('click', () => this.downloadAudio());
 
         // Audio Events
         this.elements.audioPlayer.addEventListener('loadedmetadata', () => this.updateAudioDuration());
         this.elements.audioPlayer.addEventListener('timeupdate', () => this.updateAudioProgress());
         this.elements.audioPlayer.addEventListener('ended', () => this.handleAudioEnd());
+        this.elements.audioPlayer.addEventListener('play', () => this.updatePlayPauseButton(true));
+        this.elements.audioPlayer.addEventListener('pause', () => this.updatePlayPauseButton(false));
 
-        // Text Controls
-        this.elements.fontSizeSelect.addEventListener('change', (e) => this.adjustFontSize(e));
+        // Font Size Control - Apply to whole page
+        this.elements.fontSizeSelect.addEventListener('change', (e) => this.adjustGlobalFontSize(e));
+
+        // Search Controls
         this.elements.searchInput.addEventListener('input', () => this.performSearch());
+        this.elements.searchPrevBtn.addEventListener('click', () => this.navigateSearch(-1));
+        this.elements.searchNextBtn.addEventListener('click', () => this.navigateSearch(1));
+        this.elements.clearSearchBtn.addEventListener('click', () => this.clearSearch());
+
+        // Scroll Controls
+        this.elements.scrollToTopBtn.addEventListener('click', () => this.scrollToTop());
+        this.elements.scrollToBottomBtn.addEventListener('click', () => this.scrollToBottom());
+
+        // Read Aloud
+        this.elements.speakTranscriptBtn.addEventListener('click', () => this.toggleReadAloud());
 
         // Translation Controls
-        this.elements.translateBtn.addEventListener('click', () => this.translateTranscript());
+        this.elements.translateBtn.addEventListener('click', () => this.translateContent());
         this.elements.copyTranslatedBtn.addEventListener('click', () => this.copyTranslated());
-        this.elements.exportTranslatedBtn.addEventListener('click', () => this.exportTranslated());
         this.elements.closeTranslationBtn.addEventListener('click', () => this.closeTranslation());
+        this.elements.copyTranslatedSummaryBtn.addEventListener('click', () => this.copyTranslatedSummary());
 
         // Copy/Export Buttons
         this.elements.copyTranscriptBtn.addEventListener('click', () => this.copyTranscript());
@@ -132,6 +173,9 @@ class TranscribeFlow {
 
         // Keyboard Shortcuts
         document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+
+        // Text selection in transcript
+        this.elements.transcriptDiv.addEventListener('click', (e) => this.handleTranscriptClick(e));
     }
 
     // File Handling
@@ -198,6 +242,7 @@ class TranscribeFlow {
         this.setProcessingState(true);
         this.showProcessing();
         this.clearLogs();
+        this.clearSearch();
 
         // Get selected language
         const selectedLanguage = document.getElementById('inputLanguage').value;
@@ -354,10 +399,32 @@ class TranscribeFlow {
         this.elements.fileInfoName.textContent = data.filename;
         this.elements.fileInfoSize.textContent = `${data.size_mb} MB`;
         this.elements.fileInfoTime.textContent = new Date(data.uploaded).toLocaleString();
+        
+        // Get selected language name
+        const inputLanguageSelect = document.getElementById('inputLanguage');
+        const selectedOption = inputLanguageSelect.options[inputLanguageSelect.selectedIndex];
+        this.elements.fileInfoLanguage.textContent = selectedOption ? selectedOption.text.split(' (')[0] : 'Unknown';
+        
+        // Show file info, hide empty state for player
         this.elements.fileInfoSection.classList.remove('hidden');
+        this.elements.playerEmptyState.classList.add('hidden');
 
         // Transcript
-        this.elements.transcriptDiv.textContent = data.transcript || 'No transcript generated';
+        if (data.transcript) {
+            this.elements.transcriptDiv.innerHTML = this.formatTranscript(data.transcript);
+            this.updateWordCount(data.transcript);
+        } else {
+            this.elements.transcriptDiv.innerHTML = `
+                <div class="transcript-placeholder">
+                    <div class="placeholder-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h4>No Transcript Generated</h4>
+                    <p>The audio file was processed but no transcript was generated.</p>
+                </div>
+            `;
+            this.elements.wordCount.textContent = '0 words';
+        }
 
         // Summary
         this.formatSummary(data.summary);
@@ -366,12 +433,42 @@ class TranscribeFlow {
         if (data.audio_url) {
             this.elements.audioPlayer.src = data.audio_url;
             this.elements.audioPlayer.load();
+            // Reset playback speed to 1.0
+            this.playbackSpeed = 1.0;
+            this.elements.audioPlayer.playbackRate = 1.0;
+            this.elements.speedControlBtn.innerHTML = '<i class="fas fa-tachometer-alt"></i><span>1.0x</span>';
         }
 
         // Scroll to results smoothly
         setTimeout(() => {
             this.elements.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
+    }
+
+    formatTranscript(text) {
+        // Remove HTML tags if any
+        text = text.replace(/<[^>]*>/g, '');
+        
+        // Split into paragraphs
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim());
+        
+        // Format each paragraph
+        return paragraphs.map(paragraph => {
+            const lines = paragraph.split('\n').filter(line => line.trim());
+            if (lines.length === 1) {
+                return `<p class="transcript-paragraph">${lines[0].trim()}</p>`;
+            } else {
+                return lines.map(line => 
+                    `<p class="transcript-line">${line.trim()}</p>`
+                ).join('');
+            }
+        }).join('');
+    }
+
+    updateWordCount(text) {
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        const wordCount = words.length;
+        this.elements.wordCount.textContent = `${wordCount.toLocaleString()} words`;
     }
 
     formatSummary(summary) {
@@ -418,25 +515,63 @@ class TranscribeFlow {
     togglePlayPause() {
         if (this.elements.audioPlayer.paused) {
             this.elements.audioPlayer.play();
-            this.elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         } else {
             this.elements.audioPlayer.pause();
+        }
+    }
+
+    updatePlayPauseButton(isPlaying) {
+        if (isPlaying) {
+            this.elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        } else {
             this.elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
         }
     }
 
     skip(seconds) {
-        this.elements.audioPlayer.currentTime += seconds;
+        if (this.elements.audioPlayer.duration) {
+            this.elements.audioPlayer.currentTime += seconds;
+            this.showToast(`Skipped ${seconds > 0 ? 'forward' : 'back'} ${Math.abs(seconds)} seconds`, 'info');
+        }
     }
 
     seekAudio(e) {
         if (this.elements.audioPlayer.duration) {
-            this.elements.audioPlayer.currentTime = (e.target.value / 100) * this.elements.audioPlayer.duration;
+            const seekTime = (e.target.value / 100) * this.elements.audioPlayer.duration;
+            this.elements.audioPlayer.currentTime = seekTime;
         }
     }
 
     adjustVolume(e) {
         this.elements.audioPlayer.volume = e.target.value / 100;
+    }
+
+    togglePlaybackSpeed() {
+        const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+        const currentIndex = speeds.indexOf(this.playbackSpeed);
+        const nextIndex = (currentIndex + 1) % speeds.length;
+        this.playbackSpeed = speeds[nextIndex];
+        
+        this.elements.audioPlayer.playbackRate = this.playbackSpeed;
+        this.elements.speedControlBtn.innerHTML = `<i class="fas fa-tachometer-alt"></i><span>${this.playbackSpeed.toFixed(2)}x</span>`;
+        
+        this.showToast(`Playback speed: ${this.playbackSpeed.toFixed(2)}x`, 'info');
+    }
+
+    downloadAudio() {
+        if (!this.currentFile || !this.currentFile.audio_url) {
+            this.showToast('No audio file available to download', 'warning');
+            return;
+        }
+
+        const a = document.createElement('a');
+        a.href = this.currentFile.audio_url;
+        a.download = this.currentFile.filename || 'audio_file';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        this.showToast('Audio file downloaded!', 'success');
     }
 
     updateAudioDuration() {
@@ -471,36 +606,215 @@ class TranscribeFlow {
     }
 
     // Text Controls
-    adjustFontSize(e) {
+    adjustGlobalFontSize(e) {
         const fontSize = e.target.value + 'px';
-        this.elements.transcriptDiv.style.fontSize = fontSize;
-        this.elements.summaryDiv.style.fontSize = fontSize;
+        // Apply to the entire document
+        document.documentElement.style.fontSize = fontSize;
+        this.showToast(`Font size set to ${e.target.selectedOptions[0].text}`, 'success');
     }
 
+    // Search Functionality
     performSearch() {
         const query = this.elements.searchInput.value.trim();
-        const text = this.elements.transcriptDiv.textContent;
+        const transcriptContent = this.elements.transcriptDiv.textContent;
 
         if (!query) {
-            this.elements.transcriptDiv.innerHTML = text.replace(/<\/?mark>/g, '');
-            this.elements.searchResults.textContent = '';
+            this.clearSearch();
             return;
         }
 
-        const regex = new RegExp(`(${this.escapeRegExp(query)})`, 'gi');
-        const matches = (text.match(regex) || []).length;
-        const highlighted = text.replace(regex, '<mark>$1</mark>');
+        try {
+            const regex = new RegExp(this.escapeRegExp(query), 'gi');
+            const matches = transcriptContent.match(regex) || [];
+            
+            if (matches.length === 0) {
+                this.searchResults = [];
+                this.currentSearchIndex = -1;
+                this.elements.searchResults.textContent = '0 matches';
+                this.showToast('No matches found', 'info');
+                return;
+            }
 
-        this.elements.transcriptDiv.innerHTML = highlighted;
-        this.elements.searchResults.textContent = `${matches} match${matches !== 1 ? 'es' : ''}`;
+            // Store search results
+            this.searchResults = [];
+            let match;
+            while ((match = regex.exec(transcriptContent)) !== null) {
+                this.searchResults.push({
+                    index: match.index,
+                    length: match[0].length
+                });
+            }
+
+            this.currentSearchIndex = 0;
+            this.elements.searchResults.textContent = `${this.searchResults.length} match${this.searchResults.length !== 1 ? 'es' : ''}`;
+            
+            // Highlight all matches and scroll to first
+            this.highlightSearchResults();
+            this.navigateToSearchResult(0);
+
+        } catch (error) {
+            console.error('Search error:', error);
+            this.showToast('Invalid search pattern', 'error');
+        }
     }
 
     escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    highlightSearchResults() {
+        const query = this.elements.searchInput.value.trim();
+        if (!query) return;
+
+        const transcriptContent = this.elements.transcriptDiv.textContent;
+        const regex = new RegExp(`(${this.escapeRegExp(query)})`, 'gi');
+        
+        let highlighted = transcriptContent;
+        let offset = 0;
+        
+        this.searchResults.forEach((result, index) => {
+            const start = result.index + offset;
+            const end = start + result.length;
+            const before = highlighted.substring(0, start);
+            const match = highlighted.substring(start, end);
+            const after = highlighted.substring(end);
+            
+            const highlightClass = index === this.currentSearchIndex ? 'current-highlight' : 'highlight';
+            highlighted = before + `<span class="${highlightClass}">${match}</span>` + after;
+            
+            // Account for added HTML length
+            offset += `<span class="${highlightClass}">${match}</span>`.length - match.length;
+        });
+
+        this.elements.transcriptDiv.innerHTML = highlighted;
+    }
+
+    navigateSearch(direction) {
+        if (this.searchResults.length === 0) return;
+
+        this.currentSearchIndex += direction;
+        
+        if (this.currentSearchIndex < 0) {
+            this.currentSearchIndex = this.searchResults.length - 1;
+        } else if (this.currentSearchIndex >= this.searchResults.length) {
+            this.currentSearchIndex = 0;
+        }
+
+        this.highlightSearchResults();
+        this.navigateToSearchResult(this.currentSearchIndex);
+    }
+
+    navigateToSearchResult(index) {
+        if (this.searchResults.length === 0 || index < 0 || index >= this.searchResults.length) return;
+
+        const result = this.searchResults[index];
+        const element = this.elements.transcriptDiv.querySelector(`.current-highlight`);
+        
+        if (element) {
+            element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+
+        this.elements.searchResults.textContent = `${index + 1} of ${this.searchResults.length} match${this.searchResults.length !== 1 ? 'es' : ''}`;
+    }
+
+    clearSearch() {
+        this.elements.searchInput.value = '';
+        this.searchResults = [];
+        this.currentSearchIndex = -1;
+        
+        // Restore original transcript
+        const originalText = this.elements.transcriptDiv.textContent;
+        this.elements.transcriptDiv.innerHTML = this.formatTranscript(originalText);
+        
+        this.elements.searchResults.textContent = '0 matches';
+    }
+
+    // Scroll Controls
+    scrollToTop() {
+        this.elements.transcriptDiv.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    scrollToBottom() {
+        this.elements.transcriptDiv.scrollTo({
+            top: this.elements.transcriptDiv.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+
+    // Read Aloud
+    toggleReadAloud() {
+        if (this.isReading) {
+            this.stopReadAloud();
+        } else {
+            this.startReadAloud();
+        }
+    }
+
+    startReadAloud() {
+        const text = this.elements.transcriptDiv.textContent;
+        if (!text || text.includes('No Transcript Yet') || text.includes('No Transcript Generated')) {
+            this.showToast('No transcript to read', 'warning');
+            return;
+        }
+
+        if (this.speechSynthesis.speaking) {
+            this.speechSynthesis.cancel();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.lang = 'en-US';
+
+        utterance.onstart = () => {
+            this.isReading = true;
+            this.elements.speakTranscriptBtn.innerHTML = '<i class="fas fa-stop"></i>';
+            this.showToast('Reading transcript aloud...', 'info');
+        };
+
+        utterance.onend = () => {
+            this.isReading = false;
+            this.elements.speakTranscriptBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            this.showToast('Finished reading transcript', 'success');
+        };
+
+        utterance.onerror = (event) => {
+            console.error('Speech synthesis error:', event);
+            this.isReading = false;
+            this.elements.speakTranscriptBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            this.showToast('Error reading transcript', 'error');
+        };
+
+        this.speechSynthesis.speak(utterance);
+    }
+
+    stopReadAloud() {
+        if (this.speechSynthesis.speaking) {
+            this.speechSynthesis.cancel();
+            this.isReading = false;
+            this.elements.speakTranscriptBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            this.showToast('Stopped reading', 'info');
+        }
+    }
+
+    // Transcript Click Handling
+    handleTranscriptClick(e) {
+        if (e.target.classList.contains('transcript-paragraph') || 
+            e.target.classList.contains('transcript-line')) {
+            const selection = window.getSelection();
+            selection.selectAllChildren(e.target);
+        }
+    }
+
     // Translation Methods
-    async translateTranscript() {
+    async translateContent() {
         const targetLang = this.elements.targetLanguageSelect.value;
 
         if (!targetLang) {
@@ -509,19 +823,26 @@ class TranscribeFlow {
         }
 
         const transcript = this.elements.transcriptDiv.textContent;
+        const summary = this.elements.summaryDiv.textContent || this.elements.summaryDiv.innerText;
 
-        if (!transcript || transcript === 'Upload audio to see AI transcription...') {
-            this.showToast('No transcript to translate', 'warning');
+        if ((!transcript || transcript.includes('No Transcript Yet') || transcript.includes('No Transcript Generated')) &&
+            (!summary || summary.includes('AI summary will appear here after processing'))) {
+            this.showToast('No content to translate', 'warning');
             return;
         }
 
         // Show loading state
         this.elements.translatedTranscriptCard.classList.remove('hidden');
-        this.elements.translatedTranscript.innerHTML = '<div class="loading-spinner"></div><p>Translating...</p>';
+        this.elements.translatedSummaryCard.classList.remove('hidden');
+        
+        this.elements.translatedTranscript.innerHTML = '<div class="loading-spinner"></div><p>Translating transcript...</p>';
+        this.elements.translatedSummary.innerHTML = '<div class="loading-spinner"></div><p>Translating summary...</p>';
+        
         this.elements.translateBtn.disabled = true;
 
         try {
-            const response = await fetch('/api/translate', {
+            // Translate transcript
+            const transcriptResponse = await fetch('/api/translate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -533,19 +854,35 @@ class TranscribeFlow {
                 })
             });
 
-            if (!response.ok) {
+            // Translate summary
+            const summaryResponse = await fetch('/api/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: summary,
+                    source_lang: 'auto',
+                    target_lang: targetLang
+                })
+            });
+
+            if (!transcriptResponse.ok || !summaryResponse.ok) {
                 throw new Error('Translation failed');
             }
 
-            const data = await response.json();
+            const transcriptData = await transcriptResponse.json();
+            const summaryData = await summaryResponse.json();
 
-            if (data.success) {
-                this.elements.translatedTranscript.textContent = data.translated;
+            if (transcriptData.success && summaryData.success) {
+                this.elements.translatedTranscript.textContent = transcriptData.translated;
+                this.elements.translatedSummary.textContent = summaryData.translated;
+                
                 const langName = this.elements.targetLanguageSelect.selectedOptions[0].text;
                 this.elements.translationInfo.textContent = `Translated to ${langName}`;
-                this.showToast('Translation complete!', 'success');
+                this.showToast(`Translated to ${langName}!`, 'success');
 
-                // Scroll to translated card
+                // Scroll to translated sections
                 setTimeout(() => {
                     this.elements.translatedTranscriptCard.scrollIntoView({
                         behavior: 'smooth',
@@ -553,13 +890,19 @@ class TranscribeFlow {
                     });
                 }, 100);
             } else {
-                throw new Error(data.error || 'Translation failed');
+                throw new Error(transcriptData.error || summaryData.error || 'Translation failed');
             }
 
         } catch (error) {
             console.error('Translation error:', error);
             this.elements.translatedTranscript.innerHTML = `
-                <div class="error-placeholder">
+                <div class="translation-placeholder">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Translation failed: ${error.message}</p>
+                </div>
+            `;
+            this.elements.translatedSummary.innerHTML = `
+                <div class="translation-placeholder">
                     <i class="fas fa-exclamation-circle"></i>
                     <p>Translation failed: ${error.message}</p>
                 </div>
@@ -573,25 +916,24 @@ class TranscribeFlow {
     async copyTranslated() {
         try {
             await navigator.clipboard.writeText(this.elements.translatedTranscript.textContent);
-            this.showToast('Translated text copied!', 'success');
+            this.showToast('Translated transcript copied!', 'success');
         } catch (err) {
             this.showToast('Failed to copy', 'error');
         }
     }
 
-    exportTranslated() {
-        if (!this.currentFile) return;
-
-        const targetLang = this.elements.targetLanguageSelect.selectedOptions[0].text;
-        const content = `TranscribeFlow - Translated Transcript (${targetLang})\n${'='.repeat(60)}\n\n${this.elements.translatedTranscript.textContent}`;
-        const filename = `${this.currentFile.filename.replace(/\.[^/.]+$/, '')}_translated_${this.elements.targetLanguageSelect.value}.txt`;
-
-        this.downloadFile(content, filename);
-        this.showToast('Translation downloaded!', 'success');
+    async copyTranslatedSummary() {
+        try {
+            await navigator.clipboard.writeText(this.elements.translatedSummary.textContent);
+            this.showToast('Translated summary copied!', 'success');
+        } catch (err) {
+            this.showToast('Failed to copy', 'error');
+        }
     }
 
     closeTranslation() {
         this.elements.translatedTranscriptCard.classList.add('hidden');
+        this.elements.translatedSummaryCard.classList.add('hidden');
         this.elements.targetLanguageSelect.value = '';
     }
 
@@ -737,6 +1079,15 @@ class TranscribeFlow {
     resetApp() {
         this.currentFile = null;
         this.isProcessing = false;
+        this.playbackSpeed = 1.0;
+        this.searchResults = [];
+        this.currentSearchIndex = -1;
+        this.isReading = false;
+
+        // Stop speech synthesis if active
+        if (this.speechSynthesis.speaking) {
+            this.speechSynthesis.cancel();
+        }
 
         // Reset file input
         this.elements.audioFileInput.value = '';
@@ -745,11 +1096,24 @@ class TranscribeFlow {
 
         // Reset translation
         this.elements.translatedTranscriptCard.classList.add('hidden');
+        this.elements.translatedSummaryCard.classList.add('hidden');
         this.elements.targetLanguageSelect.value = '';
-        this.elements.translatedTranscript.textContent = 'Select a language and click translate...';
+        this.elements.translatedTranscript.innerHTML = `
+            <div class="translation-placeholder">
+                <i class="fas fa-language"></i>
+                <p>Select a language and click translate to see the translation here.</p>
+            </div>
+        `;
+        this.elements.translatedSummary.innerHTML = `
+            <div class="translation-placeholder">
+                <i class="fas fa-language"></i>
+                <p>Select a language and click translate to see the translation here.</p>
+            </div>
+        `;
 
         // Hide sections
         this.elements.fileInfoSection.classList.add('hidden');
+        this.elements.playerEmptyState.classList.remove('hidden');
         this.elements.resultsSection.classList.add('hidden');
         this.elements.emptyState.classList.remove('hidden');
 
@@ -759,9 +1123,26 @@ class TranscribeFlow {
         this.elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
         this.elements.progressBar.value = 0;
         this.elements.currentTimeEl.textContent = '0:00';
+        this.elements.durationEl.textContent = '0:00';
+        this.elements.volumeBar.value = 100;
+        this.elements.speedControlBtn.innerHTML = '<i class="fas fa-tachometer-alt"></i><span>1.0x</span>';
+
+        // Reset metadata
+        this.elements.fileInfoName.textContent = '-';
+        this.elements.fileInfoSize.textContent = '-';
+        this.elements.fileInfoTime.textContent = '-';
+        this.elements.fileInfoLanguage.textContent = '-';
 
         // Reset text content
-        this.elements.transcriptDiv.textContent = 'Upload audio to see AI transcription...';
+        this.elements.transcriptDiv.innerHTML = `
+            <div class="transcript-placeholder">
+                <div class="placeholder-icon">
+                    <i class="fas fa-wave-square"></i>
+                </div>
+                <h4>No Transcript Yet</h4>
+                <p>Upload and process an audio file to see the AI-generated transcript here.</p>
+            </div>
+        `;
         this.elements.summaryDiv.innerHTML = `
             <div class="summary-placeholder">
                 <i class="fas fa-brain placeholder-icon"></i>
@@ -771,11 +1152,15 @@ class TranscribeFlow {
 
         // Reset search
         this.elements.searchInput.value = '';
-        this.elements.searchResults.textContent = '';
+        this.elements.searchResults.textContent = '0 matches';
+        this.elements.wordCount.textContent = '0 words';
+
+        // Reset read aloud button
+        this.elements.speakTranscriptBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
 
         // Reset font size
         this.elements.fontSizeSelect.value = '14';
-        this.adjustFontSize({ target: this.elements.fontSizeSelect });
+        document.documentElement.style.fontSize = '16px';
 
         // Reset processing state
         this.setProcessingState(false);
@@ -880,15 +1265,21 @@ class TranscribeFlow {
                 break;
 
             case 'ArrowLeft':
-                e.preventDefault();
-                if (this.elements.audioPlayer.src) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.navigateSearch(-1);
+                } else if (this.elements.audioPlayer.src) {
+                    e.preventDefault();
                     this.skip(-10);
                 }
                 break;
 
             case 'ArrowRight':
-                e.preventDefault();
-                if (this.elements.audioPlayer.src) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.navigateSearch(1);
+                } else if (this.elements.audioPlayer.src) {
+                    e.preventDefault();
                     this.skip(10);
                 }
                 break;
@@ -896,13 +1287,25 @@ class TranscribeFlow {
             case 'Escape':
                 e.preventDefault();
                 this.elements.searchInput.blur();
+                this.clearSearch();
                 break;
 
             case 'f':
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
                     this.elements.searchInput.focus();
+                    this.elements.searchInput.select();
                 }
+                break;
+
+            case 'Home':
+                e.preventDefault();
+                this.scrollToTop();
+                break;
+
+            case 'End':
+                e.preventDefault();
+                this.scrollToBottom();
                 break;
         }
     }
