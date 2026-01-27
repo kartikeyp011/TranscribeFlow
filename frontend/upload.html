@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TranscribeFlow - Upload Audio</title>
+  <link rel="stylesheet" href="./upload.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation -->
+    <nav class="app-nav">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <a href="index.html" class="logo-link">
+            <span class="logo-text">
+              Transcribe<span class="logo-accent">Flow</span>
+            </span>
+          </a>
+          <span class="nav-subtitle">Audio Transcription & AI Summary</span>
+        </div>
+        <div class="nav-actions">
+          <button id="clearAllBtn" class="nav-cta secondary">
+            <i class="fas fa-trash-alt"></i>
+            <span>Clear All</span>
+          </button>
+          <a href="./index.html" class="nav-cta">
+            <i class="fas fa-home"></i>
+            <span>Back to Home</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content upload-page-simple">
+      <div class="upload-layout-grid">
+        <!-- Left Column: Upload Card -->
+        <div class="upload-column">
+          <div class="card upload-card-simple">
+            <div class="card-header-simple">
+              <div class="card-icon-large">
+                <i class="fas fa-cloud-upload-alt"></i>
+              </div>
+              <div class="card-header-content-simple">
+                <h2>Upload Audio</h2>
+                <p class="card-subtitle-simple">Upload your audio file to start transcription and AI summarization</p>
+              </div>
+            </div>
+
+            <form id="uploadForm" class="upload-form-simple">
+              <!-- Language Selection -->
+              <div class="language-input-section-simple">
+                <label for="inputLanguage" class="input-language-label-simple">
+                  <i class="fas fa-language"></i>
+                  <span>Select Audio Language</span>
+                </label>
+                <select id="inputLanguage" class="input-language-select-simple">
+                  <option value="en">English</option>
+                  <option value="hi">Hindi (हिन्दी)</option>
+                  <option value="es">Spanish (Español)</option>
+                  <option value="fr">French (Français)</option>
+                  <option value="de">German (Deutsch)</option>
+                  <option value="zh">Chinese (中文)</option>
+                  <option value="ja">Japanese (日本語)</option>
+                  <option value="ko">Korean (한국어)</option>
+                  <option value="ar">Arabic (العربية)</option>
+                  <option value="ru">Russian (Русский)</option>
+                  <option value="pt">Portuguese (Português)</option>
+                  <option value="bn">Bengali (বাংলা)</option>
+                  <option value="te">Telugu (తెలుగు)</option>
+                  <option value="mr">Marathi (मराठी)</option>
+                  <option value="ta">Tamil (தமிழ்)</option>
+                  <option value="ur">Urdu (اردو)</option>
+                  <option value="it">Italian (Italiano)</option>
+                  <option value="nl">Dutch (Nederlands)</option>
+                  <option value="tr">Turkish (Türkçe)</option>
+                  <option value="vi">Vietnamese (Tiếng Việt)</option>
+                  <option value="th">Thai (ไทย)</option>
+                  <option value="id">Indonesian (Bahasa Indonesia)</option>
+                </select>
+                <p class="language-hint-simple">
+                  <i class="fas fa-info-circle"></i>
+                  Select the language spoken in your audio file for better accuracy
+                </p>
+              </div>
+              
+              <!-- Dropzone -->
+              <div class="dropzone-simple" id="dropzone">
+                <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg">
+                <div class="dropzone-content-simple">
+                  <div class="dropzone-icon-simple">
+                    <i class="fas fa-file-audio"></i>
+                  </div>
+                  <div class="dropzone-text-simple">
+                    <span id="dropzoneText" class="dropzone-main-simple">Click to select or drag & drop</span>
+                    <span id="dropzoneHint" class="dropzone-hint-simple">MP3, WAV, M4A, OGG • Max 25MB</span>
+                  </div>
+                </div>
+                <div id="fileName" class="file-name-preview-simple"></div>
+              </div>
+
+              <!-- Upload Button -->
+              <button type="submit" id="processBtn" class="btn-primary-upload">
+                <span id="processBtnText">Upload & Process Audio</span>
+                <i class="fas fa-magic"></i>
+                <i id="processingSpinner" class="fas fa-spinner fa-spin hidden"></i>
+              </button>
+            </form>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading-indicator-simple hidden">
+              <div class="loading-spinner-simple"></div>
+              <div class="loading-content-simple">
+                <span class="loading-text-simple">Processing audio...</span>
+                <div class="loading-progress-simple">
+                  <div class="progress-bar-simple">
+                    <div class="progress-fill-simple" id="progressFill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMsg" class="error-message-simple hidden"></div>
+
+            <!-- File Information -->
+            <div id="fileInfo" class="file-info-simple hidden">
+              <div class="file-info-header">
+                <i class="fas fa-file-audio"></i>
+                <h4>Uploaded File</h4>
+              </div>
+              <div class="file-info-content">
+                <div class="file-info-row">
+                  <span class="file-info-label">File:</span>
+                  <span id="uploadedFileName" class="file-info-value">-</span>
+                </div>
+                <div class="file-info-row">
+                  <span class="file-info-label">Size:</span>
+                  <span id="uploadedFileSize" class="file-info-value">-</span>
+                </div>
+                <div class="file-info-row">
+                  <span class="file-info-label">Status:</span>
+                  <span id="uploadStatus" class="file-info-value status-processing">Processing...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Results Ready -->
+            <div id="resultsReady" class="results-ready-simple hidden">
+              <div class="results-ready-content-simple">
+                <div class="results-ready-icon">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>Processing Complete!</h3>
+                <p>Your audio has been transcribed and summarized successfully.</p>
+                <button id="viewResultsBtn" class="btn-success">
+                  <i class="fas fa-eye"></i>
+                  <span>View Results</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Processing Logs -->
+        <div class="logs-column">
+          <div class="card logs-card-simple">
+            <div class="card-header-simple">
+              <div class="card-icon-large">
+                <i class="fas fa-terminal"></i>
+              </div>
+              <div class="card-header-content-simple">
+                <h2>Processing Logs</h2>
+                <p class="card-subtitle-simple">Real-time updates during audio processing</p>
+              </div>
+              <div class="card-actions-simple">
+                <button id="clearLogsBtn" class="btn-icon-small" title="Clear logs">
+                  <i class="fas fa-eraser"></i>
+                </button>
+              </div>
+            </div>
+
+            <div id="logsContent" class="logs-content-simple">
+              <div class="log-entry log-info">
+                <span class="log-time">[00:00:00]</span>
+                <span class="log-message">Ready to upload audio file</span>
+              </div>
+            </div>
+
+            <div class="logs-footer">
+              <div class="logs-stats">
+                <i class="fas fa-info-circle"></i>
+                <span>Logs update in real-time during processing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-copyright">
+        © 2026 TranscribeFlow. All rights reserved.
+      </div>
+    </footer>
+  </div>
+
+  <script src="./upload.js"></script>
+</body>
+</html>

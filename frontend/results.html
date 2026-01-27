@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TranscribeFlow - Results</title>
+  <link rel="stylesheet" href="./results.css">  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Enhanced Sky/Galaxy Background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        linear-gradient(135deg, 
+          rgba(10, 10, 20, 0.8) 0%, 
+          rgba(17, 17, 32, 0.8) 50%, 
+          rgba(22, 22, 46, 0.8) 100%);
+      z-index: -1;
+    }
+
+    /* Enhanced Starry effect */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(2px 2px at 50px 160px, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(2px 2px at 130px 80px, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(1px 1px at 160px 120px, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(1px 1px at 180px 200px, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(2px 2px at 220px 150px, rgba(255, 255, 255, 0.4), transparent);
+      background-repeat: repeat;
+      background-size: 250px 250px;
+      z-index: -1;
+      opacity: 0.6;
+      animation: twinkle 15s infinite alternate;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+
+    /* Subtle nebula effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 10% 90%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.1) 0%, transparent 40%);
+      z-index: -2;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation -->
+    <nav class="app-nav">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <a href="upload.html" class="logo-link">
+            <span class="logo-text">
+              Transcribe<span class="logo-accent">Flow</span>
+            </span>
+          </a>
+          <span class="nav-subtitle">Audio Transcription & AI Summary</span>
+        </div>
+        
+        <!-- Font Size Control in Navbar - Improved UI -->
+        <div class="nav-controls">
+          <div class="font-size-control-nav">
+            <span class="font-size-label">
+              <i class="fas fa-text-height"></i>
+            </span>
+            <div class="font-size-buttons">
+              <button class="font-size-btn" data-size="12" title="Small">
+                <span>S</span>
+              </button>
+              <button class="font-size-btn active" data-size="14" title="Medium">
+                <span>M</span>
+              </button>
+              <button class="font-size-btn" data-size="16" title="Large">
+                <span>L</span>
+              </button>
+              <button class="font-size-btn" data-size="18" title="Extra Large">
+                <span>XL</span>
+              </button>
+            </div>
+            <!-- Hidden select for JS compatibility -->
+            <select id="fontSize" class="hidden">
+              <option value="12">Small</option>
+              <option value="14" selected>Medium</option>
+              <option value="16">Large</option>
+              <option value="18">XL</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="nav-actions">
+          <a href="upload.html" class="nav-cta secondary">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Upload</span>
+          </a>
+          <a href="./index.html" class="nav-cta">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content results-page">
+      <!-- Top Section: File Info & Audio Player -->
+      <div class="results-header-section">
+        <!-- File Info Card -->
+        <div class="card file-info-card-results transparent-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-file-audio"></i>
+            </div>
+            <div class="card-header-content">
+              <h3>File Information</h3>
+              <p class="card-subtitle">Details of the processed audio file</p>
+            </div>
+          </div>
+
+          <div class="file-metadata-grid-results">
+            <div class="metadata-item-results">
+              <div class="metadata-label-results">
+                <i class="fas fa-file-alt"></i>
+                File Name
+              </div>
+              <div id="fileInfoName" class="metadata-value-results">-</div>
+            </div>
+            <div class="metadata-item-results">
+              <div class="metadata-label-results">
+                <i class="fas fa-weight-hanging"></i>
+                File Size
+              </div>
+              <div id="fileInfoSize" class="metadata-value-results">-</div>
+            </div>
+            <div class="metadata-item-results">
+              <div class="metadata-label-results">
+                <i class="fas fa-clock"></i>
+                Processed
+              </div>
+              <div id="fileInfoTime" class="metadata-value-results">-</div>
+            </div>
+            <div class="metadata-item-results">
+              <div class="metadata-label-results">
+                <i class="fas fa-language"></i>
+                Language
+              </div>
+              <div id="fileInfoLanguage" class="metadata-value-results">-</div>
+            </div>
+          </div>
+          
+          <!-- Quick Action Buttons -->
+          <div class="quick-action-buttons">
+            <button id="copyFileInfoBtn" class="quick-action-btn" title="Copy file info">
+              <i class="fas fa-copy"></i>
+              Copy Info
+            </button>
+            <button id="exportFileInfoBtn" class="quick-action-btn" title="Export file info">
+              <i class="fas fa-download"></i>
+              Export Info
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio Player Card -->
+        <div class="card audio-player-card transparent-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="card-header-content">
+              <h3>Audio Player</h3>
+              <p class="card-subtitle">Playback controls</p>
+            </div>
+          </div>
+
+          <div class="audio-player-enhanced">
+            <div class="player-main-controls">
+              <button id="playPause" class="control-btn-results play-btn-results">
+                <i class="fas fa-play"></i>
+              </button>
+              <div class="player-time-info">
+                <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+              </div>
+              <div class="volume-control-results">
+                <i class="fas fa-volume-up"></i>
+                <input type="range" id="volumeBar" min="0" max="100" value="100" class="volume-slider-results">
+              </div>
+            </div>
+            
+            <div class="audio-progress-results">
+              <input type="range" id="progressBar" min="0" max="100" value="0" class="progress-slider-results">
+            </div>
+            
+            <!-- Native Audio Element -->
+            <audio id="audioPlayer" class="native-audio"></audio>
+            
+            <div class="player-secondary-controls">
+              <button id="skipBack" class="control-btn-results small">
+                <i class="fas fa-step-backward"></i>
+                <span>10s</span>
+              </button>
+              <button id="skipForward" class="control-btn-results small">
+                <i class="fas fa-step-forward"></i>
+                <span>10s</span>
+              </button>
+              <button id="speedControl" class="control-btn-results small">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>1.0x</span>
+              </button>
+              <button id="downloadAudio" class="control-btn-results small">
+                <i class="fas fa-download"></i>
+                <span>Save</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Quick Action Buttons -->
+          <div class="quick-action-buttons">
+            <button id="loopToggleBtn" class="quick-action-btn" title="Toggle loop">
+              <i class="fas fa-redo"></i>
+              Loop
+            </button>
+            <button id="speedPresetsBtn" class="quick-action-btn" title="Speed presets">
+              <i class="fas fa-tachometer-alt"></i>
+              Speed
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section: Transcript & Summary Side by Side -->
+      <div class="results-main-section">
+        <!-- Results Grid -->
+        <div class="results-grid-results">
+          <!-- Transcript Column -->
+          <div class="result-column-results">
+            <div class="card result-card-results transcript-card-results transparent-card">
+              <!-- Transcript Header -->
+              <div class="transcript-header-results">
+                <div class="transcript-header-main-results">
+                  <div class="header-icon-title-results">
+                    <div class="card-icon-small">
+                      <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="header-title-section-results">
+                      <h3>Transcript</h3>
+                      <p class="header-subtitle-results">Full text transcription of your audio</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Action Icons - Without container box -->
+                  <div class="action-icons-container">
+                    <div class="action-icon-wrapper">
+                      <button id="toggleSearchPanel" class="action-icon-btn" title="Search Transcript">
+                        <i class="fas fa-search"></i>
+                      </button>
+                    </div>
+                    
+                    <div class="action-icon-wrapper">
+                      <button id="toggleTranslatePanel" class="action-icon-btn" title="Translate Transcript">
+                        <i class="fas fa-language"></i>
+                      </button>
+                    </div>
+                    
+                    <button id="copyTranscript" class="action-icon-btn" title="Copy transcript">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                    <button id="exportTxt" class="action-icon-btn" title="Export transcript">
+                      <i class="fas fa-download"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Search Panel (Hidden by default) -->
+              <div id="searchPanel" class="utility-panel hidden">
+                <div class="utility-panel-header">
+                  <h4><i class="fas fa-search"></i> Search Transcript</h4>
+                  <button id="closeSearchPanel" class="close-panel-btn">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div class="utility-panel-content">
+                  <div class="search-box-results">
+                    <i class="fas fa-search search-icon-results"></i>
+                    <input type="text" id="searchInput" placeholder="Type to search..." class="search-input-results">
+                  </div>
+                  <div class="search-actions-results">
+                    <button id="searchPrev" class="btn-icon small" title="Previous match">
+                      <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <button id="searchNext" class="btn-icon small" title="Next match">
+                      <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button id="clearSearch" class="btn-icon small" title="Clear search">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="search-stats">
+                    <span id="searchResults" class="stat-value-results">0 matches</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Translate Panel (Hidden by default) -->
+              <div id="translatePanel" class="utility-panel hidden">
+                <div class="utility-panel-header">
+                  <h4><i class="fas fa-language"></i> Translate Transcript</h4>
+                  <button id="closeTranslatePanel" class="close-panel-btn">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div class="utility-panel-content">
+                  <div class="translate-controls">
+                    <div class="language-controls-results">
+                      <select id="targetLanguage" class="language-select-results">
+                        <option value="">Select language...</option>
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="hi">Hindi</option>
+                        <option value="zh-cn">Chinese</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ar">Arabic</option>
+                        <option value="ru">Russian</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="it">Italian</option>
+                        <option value="ko">Korean</option>
+                      </select>
+                      <button id="translateBtn" class="btn-primary">
+                        <i class="fas fa-language"></i>
+                        Translate
+                      </button>
+                    </div>
+                    <div class="utility-buttons-results">
+                      <button id="speakTranscript" class="btn-icon" title="Read aloud">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transcript Content -->
+              <div class="transcript-content-container-results">
+                <div id="transcript" class="transcript-content-results scrollable-content-results">
+                  <!-- Transcript will be loaded here -->
+                  <div class="transcript-placeholder-results">
+                    <div class="placeholder-icon-results">
+                      <i class="fas fa-wave-square"></i>
+                    </div>
+                    <h4>Loading Transcript...</h4>
+                    <p>The transcript will appear here shortly.</p>
+                  </div>
+                </div>
+                
+                <!-- Transcript Footer -->
+                <div class="transcript-footer-results">
+                  <div class="footer-info-results">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Use Ctrl+F to search • Click on text to select</span>
+                  </div>
+                  <div class="footer-actions-results">
+                    <button id="scrollToTop" class="btn-icon small" title="Scroll to top">
+                      <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button id="scrollToBottom" class="btn-icon small" title="Scroll to bottom">
+                      <i class="fas fa-arrow-down"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Translated Transcript (hidden by default) -->
+              <div id="translatedTranscriptCard" class="translated-section-results hidden">
+                <div class="translated-header-results">
+                  <div class="translated-title-results">
+                    <div class="card-icon-small">
+                      <i class="fas fa-language"></i>
+                    </div>
+                    <h4>Translated Transcript</h4>
+                    <div id="translationInfo" class="translation-info-results">Translated to English</div>
+                  </div>
+                  <div class="translated-actions-results">
+                    <button id="copyTranslated" class="btn-icon small" title="Copy translated text">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                    <button id="exportTranslated" class="btn-icon small" title="Export translation">
+                      <i class="fas fa-download"></i>
+                    </button>
+                    <button id="closeTranslation" class="btn-icon small" title="Close translation">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+                <div id="translatedTranscript" class="translated-content-results scrollable-content-results">
+                  <div class="translation-placeholder-results">
+                    <i class="fas fa-language"></i>
+                    <p>Select a language and click translate to see the translation here.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Column -->
+          <div class="result-column-results">
+            <div class="card result-card-results summary-card-results transparent-card">
+              <!-- Summary Header - Same structure as transcript -->
+              <div class="transcript-header-results">
+                <div class="transcript-header-main-results">
+                  <div class="header-icon-title-results">
+                    <div class="card-icon-small">
+                      <i class="fas fa-sparkles"></i>
+                    </div>
+                    <div class="header-title-section-results">
+                      <h3>AI Summary</h3>
+                      <p class="header-subtitle-results">Key points extracted from your audio</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Action Icons for Summary -->
+                  <div class="action-icons-container">
+                    <button id="copySummary" class="action-icon-btn" title="Copy summary">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                    <button id="exportSummaryTxt" class="action-icon-btn" title="Export summary">
+                      <i class="fas fa-download"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Summary Content -->
+              <div class="transcript-content-container-results">
+                <div id="summary" class="transcript-content-results scrollable-content-results fixed-height-results">
+                  <div class="summary-placeholder-results">
+                    <i class="fas fa-brain placeholder-icon-results"></i>
+                    <p>Loading AI summary...</p>
+                  </div>
+                </div>
+                
+                <!-- Summary Footer -->
+                <div class="transcript-footer-results">
+                  <div class="footer-info-results">
+                    <i class="fas fa-info-circle"></i>
+                    <span>AI-generated summary of key points</span>
+                  </div>
+                  <div class="footer-actions-results">
+                    <button id="copySummaryBtn" class="btn-icon small" title="Copy summary">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                    <button id="exportSummaryBtn" class="btn-icon small" title="Export summary">
+                      <i class="fas fa-download"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Translated Summary (hidden by default) -->
+              <div id="translatedSummaryCard" class="translated-section-results hidden">
+                <div class="translated-header-results">
+                  <div class="translated-title-results">
+                    <div class="card-icon-small">
+                      <i class="fas fa-language"></i>
+                    </div>
+                    <h4>Translated Summary</h4>
+                    <div class="translated-actions-results">
+                      <button id="copyTranslatedSummary" class="btn-icon small" title="Copy">
+                        <i class="fas fa-copy"></i>
+                      </button>
+                      <button id="exportTranslatedSummary" class="btn-icon small" title="Export translation">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    </div>
+                  </div>
+                </div>
+                <div id="translatedSummary" class="translated-content-results scrollable-content-results fixed-height-results">
+                  Translation will appear here...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-copyright">
+        © 2026 TranscribeFlow. All rights reserved.
+      </div>
+    </footer>
+  </div>
+
+  <script src="./results.js"></script>
+  <script>
+    // Font size button functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      // Font size buttons
+      const fontSizeButtons = document.querySelectorAll('.font-size-btn');
+      const fontSizeSelect = document.getElementById('fontSize');
+      
+      fontSizeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const size = this.getAttribute('data-size');
+          
+          // Update active state
+          fontSizeButtons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Update hidden select
+          fontSizeSelect.value = size;
+          
+          // Apply font size to transcript content
+          const transcriptContent = document.getElementById('transcript');
+          const summaryContent = document.getElementById('summary');
+          const translatedTranscript = document.getElementById('translatedTranscript');
+          const translatedSummary = document.getElementById('translatedSummary');
+          
+          if (transcriptContent) transcriptContent.style.fontSize = size + 'px';
+          if (summaryContent) summaryContent.style.fontSize = size + 'px';
+          if (translatedTranscript) translatedTranscript.style.fontSize = size + 'px';
+          if (translatedSummary) translatedSummary.style.fontSize = size + 'px';
+        });
+      });
+      
+      // Initialize with medium size
+      const activeBtn = document.querySelector('.font-size-btn.active');
+      if (activeBtn) {
+        const size = activeBtn.getAttribute('data-size');
+        if (fontSizeSelect) fontSizeSelect.value = size;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,5 +1,3 @@
-# main.py - Corrected & Production-Safe
-
 import os
 import uuid
 import mimetypes
@@ -16,6 +14,7 @@ from fastapi import (
     HTTPException,
     WebSocket,
     WebSocketDisconnect,
+    Request,
 )
 
 from fastapi.staticfiles import StaticFiles
@@ -194,7 +193,7 @@ async def upload_audio(
         summary = await run_in_threadpool(
             pipeline.summarize, transcript
         )
-        logger.info("AI processing complete")
+        logger.info("✅ AI processing complete")
     except Exception as e:
         logger.exception("AI processing failed")
         transcript = "Transcription failed"
@@ -206,6 +205,9 @@ async def upload_audio(
         "size_mb": round(len(content) / (1024 * 1024), 2),
         "uploaded": datetime.now().isoformat(),
         "audio_url": f"/api/stream/{safe_name}",
+        "transcript": transcript,
+        "summary": summary,
+        "language": language,
     }
 
     recent_files.insert(0, record)
@@ -213,8 +215,6 @@ async def upload_audio(
 
     return {
         **record,
-        "transcript": transcript,
-        "summary": summary,
         "request_id": request_id,
         "status": "success",
     }
@@ -251,6 +251,24 @@ async def recent():
 
 
 # ---------------------------
+# Get Single File Data (NEW)
+# ---------------------------
+@app.get("/api/file/{filename}")
+async def get_file_data(filename: str):
+    """
+    Get data for a specific file (useful if user refreshes results page)
+    """
+    for record in recent_files:
+        if record.get("saved_as") == filename or record.get("filename") == filename:
+            return {
+                "status": "success",
+                "data": record
+            }
+    
+    raise HTTPException(404, "File not found in recent uploads")
+
+
+# ---------------------------
 # Clear Uploads
 # ---------------------------
 @app.delete("/api/clear-all")
@@ -264,8 +282,6 @@ async def clear_all():
             pass
     recent_files.clear()
     return {"cleared": count}
-
-
 
 
 # ---------------------------
@@ -284,6 +300,7 @@ async def detect_language(request: DetectLanguageRequest):
     except Exception as e:
         logger.exception("Language detection failed")
         raise HTTPException(500, f"Language detection failed: {str(e)}")
+
 
 # ---------------------------
 # Translation
@@ -308,12 +325,25 @@ async def translate_text(request: TranslateRequest):
         logger.exception("Translation failed")
         raise HTTPException(500, f"Translation failed: {str(e)}")
 
+
+# ---------------------------
+# Health Check
+# ---------------------------
 @app.get("/api/health")
 async def health():
+    return {"status": "ok", "version": "2.1"}
+
+
+# ---------------------------
+# CORS Preflight Handler (NEW)
+# ---------------------------
+@app.options("/api/{path:path}")
+async def options_handler(request: Request, path: str):
+    """Handle OPTIONS requests for CORS"""
     return {"status": "ok"}
 
 
 # ---------------------------
-# Frontend
+# Frontend Static Files
 # ---------------------------
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

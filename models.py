@@ -337,4 +337,3 @@ class TranscribeFlowPipeline:
 # Global Singleton
 # ---------------------------
 pipeline = TranscribeFlowPipeline()
-
