@@ -1,339 +1,479 @@
 import os
 import logging
-from groq import Groq
-from deep_translator import GoogleTranslator
+import tempfile
+import warnings
 import requests
 
-import warnings
-warnings.filterwarnings('ignore', category=UserWarning)
-
+from groq import Groq
+from deep_translator import GoogleTranslator
+from langdetect import detect
 from dotenv import load_dotenv
+
+
+# ---------------------------
+# Setup
+# ---------------------------
+
+warnings.filterwarnings("ignore", category=UserWarning)
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+# ---------------------------
+# Main Pipeline
+# ---------------------------
+
 class TranscribeFlowPipeline:
+
     def __init__(self):
-        """Initialize cloud-based AI services"""
-        
-        # ---------------------------
-        # Initialize Groq Client
-        # ---------------------------
-        logger.info("🔄 Initializing Groq API client...")
-        
-        self.groq_api_key = os.getenv("GROQ_API_KEY")
-        if not self.groq_api_key:
-            raise ValueError("GROQ_API_KEY not found in environment variables")
-        
-        self.groq_client = Groq(api_key=self.groq_api_key)
-        logger.info("✅ Groq API client ready!")
+
+        logger.info("🚀 Initializing TranscribeFlowPipeline...")
 
         # ---------------------------
-        # Initialize Hugging Face
+        # Groq
         # ---------------------------
-        logger.info("🔄 Initializing Hugging Face Inference API...")
-        
-        self.hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
-        if not self.hf_api_key:
-            raise ValueError("HUGGINGFACE_API_KEY not found in environment variables")
-        
-        self.hf_headers = {"Authorization": f"Bearer {self.hf_api_key}"}
-        self.hf_api_url = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
-        
-        logger.info("✅ Hugging Face API ready!")
+        self.groq_key = os.getenv("GROQ_API_KEY")
+        if not self.groq_key:
+            raise ValueError("Missing GROQ_API_KEY")
+
+        self.groq_client = Groq(api_key=self.groq_key)
+        logger.info("✅ Groq client ready")
+
 
         # ---------------------------
-        # Initialize Translator
+        # HuggingFace
         # ---------------------------
-        logger.info("🌐 Initializing translation service...")
-        self.translator_cache = {}
-        logger.info("✅ Translation service ready!")
+        self.hf_key = os.getenv("HUGGINGFACE_API_KEY")
+        if not self.hf_key:
+            raise ValueError("Missing HUGGINGFACE_API_KEY")
 
-    # ---------------------------
+        self.hf_headers = {
+            "Authorization": f"Bearer {self.hf_key}"
+        }
+
+        self.hf_api_url = (
+            "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
+        )
+
+        logger.info("✅ HuggingFace ready")
+
+
+        # ---------------------------
+        # Cache
+        # ---------------------------
+        self.translation_cache = {}
+
+        logger.info("🎯 Pipeline initialized\n")
+
+
+    # =====================================================
     # Transcription
-    # ---------------------------
-    def transcribe(self, audio_input, language="en"):
-        """
-        Transcribe audio using Groq Whisper API
-        
-        Args:
-            audio_input: Path to audio file or bytes
-            language: ISO-639-1 language code (e.g., 'en', 'hi', 'es')
-        
-        Returns:
-            Transcribed text
-        """
+    # =====================================================
+
+    def transcribe(self, audio_input, language="en") -> str:
+
+        logger.info(f"🎙️ Transcribing (lang={language})...")
+
         try:
-            logger.info(f"🎙️ Transcribing with Groq Whisper (language: {language})...")
-            
-            # Handle file path
+
+            # File path
             if isinstance(audio_input, str):
+
                 if not os.path.exists(audio_input):
-                    raise ValueError(f"Audio file not found: {audio_input}")
-                
-                with open(audio_input, "rb") as audio_file:
-                    transcription = self.groq_client.audio.transcriptions.create(
+                    raise FileNotFoundError(audio_input)
+
+                with open(audio_input, "rb") as f:
+                    audio_file = f
+
+                    result = self.groq_client.audio.transcriptions.create(
                         file=audio_file,
                         model="whisper-large-v3-turbo",
                         language=language,
                         response_format="json",
-                        temperature=0.0
+                        temperature=0
                     )
-            
-            # Handle bytes
+
+
+            # Bytes
             elif isinstance(audio_input, (bytes, bytearray)):
-                # Save temporarily for Groq API
-                temp_path = f"/tmp/temp_audio_{os.getpid()}.wav"
-                with open(temp_path, "wb") as f:
-                    f.write(audio_input)
-                
+
+                with tempfile.NamedTemporaryFile(
+                    suffix=".wav", delete=False
+                ) as temp:
+
+                    temp.write(audio_input)
+                    temp_path = temp.name
+
                 try:
-                    with open(temp_path, "rb") as audio_file:
-                        transcription = self.groq_client.audio.transcriptions.create(
-                            file=audio_file,
+                    with open(temp_path, "rb") as f:
+
+                        result = self.groq_client.audio.transcriptions.create(
+                            file=f,
                             model="whisper-large-v3-turbo",
                             language=language,
                             response_format="json",
-                            temperature=0.0
+                            temperature=0
                         )
+
                 finally:
-                    if os.path.exists(temp_path):
-                        os.remove(temp_path)
-            
+                    os.remove(temp_path)
+
+
             else:
-                raise TypeError(f"Unsupported audio_input type: {type(audio_input)}")
-            
-            transcript_text = transcription.text
-            logger.info(f"✅ Transcription complete ({len(transcript_text)} characters)")
-            
-            return transcript_text
-            
+                raise TypeError("Unsupported audio format")
+
+
+            text = result.text.strip()
+
+            logger.info("✅ Transcription complete")
+
+            return text
+
+
         except Exception as e:
-            logger.error(f"Transcription failed: {e}")
+            logger.error(f"❌ Transcription failed: {e}")
             raise
 
-    # ---------------------------
+
+    # =====================================================
     # Summarization
-    # ---------------------------
-    def summarize(self, transcript: str, max_length: int = 200) -> str:
-        """
-        Summarize text using Groq LLM API
-        
-        Args:
-            transcript: Text to summarize
-            max_length: Maximum length of summary (tokens)
-        
-        Returns:
-            Formatted summary with bullet points
-        """
+    # =====================================================
+
+    def summarize(self, text: str, max_tokens=200) -> str:
+
+        logger.info("📝 Summarizing...")
+
         try:
-            logger.info("📝 Generating summary with Groq LLM...")
-            
-            # Use Groq's LLM for better summarization
-            chat_completion = self.groq_client.chat.completions.create(
+
+            completion = self.groq_client.chat.completions.create(
+
                 model="llama-3.1-8b-instant",
+
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that creates concise, bullet-point summaries of transcripts. Format your response with key points as bullet points."
+                        "content": (
+                            "You summarize transcripts into clear bullet points."
+                        )
                     },
                     {
                         "role": "user",
-                        "content": f"Summarize the following transcript in 3-5 key bullet points:\n\n{transcript[:4000]}"  # Limit input length
+                        "content": (
+                            f"Summarize in 3-5 bullet points:\n\n{text[:4000]}"
+                        )
                     }
                 ],
-                temperature=0.0,
-                max_tokens=max_length,
-            )
-            
-            summary = chat_completion.choices[0].message.content
-            
-            # Format if not already formatted
-            if "•" not in summary and "*" not in summary:
-                sentences = [s.strip() for s in summary.split('.') if s.strip()]
-                formatted = "**Key Points:**\n" + "\n".join([f"• {s}" for s in sentences[:5]])
-            else:
-                formatted = f"**Key Points:**\n{summary}"
-            
-            logger.info("✅ Summary generated")
-            return formatted
-            
-        except Exception as e:
-            logger.error(f"Groq summarization failed, trying Hugging Face: {e}")
-            
-            # Fallback to Hugging Face
-            try:
-                return self._summarize_with_hf(transcript, max_length)
-            except Exception as hf_error:
-                logger.error(f"Hugging Face summarization also failed: {hf_error}")
-                # Final fallback
-                sentences = transcript.split('. ')
-                summary = ". ".join(sentences[:4]) + "..."
-                return f"**Summary:**\n{summary}"
 
-    def _summarize_with_hf(self, transcript: str, max_length: int = 200) -> str:
-        """
-        Fallback summarization using Hugging Face Inference API
-        """
-        logger.info("📝 Generating summary with Hugging Face...")
-        
+                temperature=0,
+                max_tokens=max_tokens
+            )
+
+
+            summary = completion.choices[0].message.content.strip()
+
+
+            if "•" not in summary:
+                lines = summary.split(".")
+                summary = "\n".join(
+                    [f"• {l.strip()}" for l in lines if l.strip()]
+                )
+
+
+            return "**Key Points:**\n" + summary
+
+
+        except Exception as e:
+
+            logger.warning("Groq failed → using HF")
+
+            return self._summarize_hf(text, max_tokens)
+
+
+
+    def _summarize_hf(self, text, max_tokens):
+
         payload = {
-            "inputs": transcript[:1024],  # HF free tier has input limits
+            "inputs": text[:1024],
             "parameters": {
-                "max_length": max_length,
+                "max_length": max_tokens,
                 "min_length": 30,
                 "do_sample": False
             }
         }
-        
-        response = requests.post(
+
+        r = requests.post(
             self.hf_api_url,
             headers=self.hf_headers,
             json=payload,
             timeout=30
         )
-        
-        if response.status_code == 200:
-            result = response.json()
-            if isinstance(result, list) and len(result) > 0:
-                summary = result[0].get('summary_text', '')
-                bullet_points = summary.replace('. ', '.\n• ')
-                formatted = f"**Key Points:**\n• {bullet_points}"
-                logger.info("✅ Summary generated with HF")
-                return formatted
-        
-        raise Exception(f"HF API error: {response.status_code}")
 
-    # ---------------------------
+        if r.status_code != 200:
+            raise RuntimeError("HF summarization failed")
+
+        data = r.json()
+
+        if not data:
+            raise RuntimeError("Empty HF response")
+
+        summary = data[0]["summary_text"]
+
+        return "**Key Points:**\n• " + summary.replace(". ", ".\n• ")
+
+
+
+    # =====================================================
     # Language Detection
-    # ---------------------------
-    def detect_language(self, text: str) -> dict:
-        """
-        Detect language from text using simple heuristics
-        Enhanced with more language patterns
-        """
-        try:
-            # Common language patterns
-            if any(char in text for char in ['ä', 'ö', 'ü', 'ß']):
-                return {'code': 'de', 'name': 'German'}
-            elif any(char in text for char in ['é', 'è', 'ê', 'à', 'ç']):
-                return {'code': 'fr', 'name': 'French'}
-            elif any(char in text for char in ['ñ', '¿', '¡']):
-                return {'code': 'es', 'name': 'Spanish'}
-            elif any(char in text for char in ['а', 'б', 'в', 'г', 'д']):
-                return {'code': 'ru', 'name': 'Russian'}
-            elif any(char in text for char in ['你', '我', '的', '是']):
-                return {'code': 'zh-cn', 'name': 'Chinese'}
-            elif any(char in text for char in ['の', 'は', 'を', 'に']):
-                return {'code': 'ja', 'name': 'Japanese'}
-            elif any(char in text for char in ['क', 'ख', 'ग', 'च', 'है']):
-                return {'code': 'hi', 'name': 'Hindi'}
-            else:
-                return {'code': 'en', 'name': 'English'}
-                
-        except Exception as e:
-            logger.error(f"Language detection failed: {e}")
-            return {'code': 'en', 'name': 'English'}
+    # =====================================================
 
-    # ---------------------------
-    # Translation
-    # ---------------------------
-    def translate_text(self, text: str, source_lang: str = 'auto', target_lang: str = 'en') -> dict:
-        """
-        Translate text using Groq LLM for better quality
-        Falls back to GoogleTranslator if needed
-        """
+    def detect_language(self, text: str) -> dict:
+
         try:
-            logger.info(f"🌐 Translating from {source_lang} to {target_lang}...")
-            
-            # Handle same language case
-            if source_lang == target_lang and source_lang != 'auto':
-                return {
-                    'original': text,
-                    'translated': text,
-                    'source_lang': source_lang,
-                    'target_lang': target_lang,
-                    'message': 'Source and target languages are the same',
-                    'success': True
-                }
-            
-            # Try Groq LLM translation first for better quality
-            try:
-                language_names = {
-                    'en': 'English', 'hi': 'Hindi', 'es': 'Spanish',
-                    'fr': 'French', 'de': 'German', 'zh-cn': 'Chinese',
-                    'ja': 'Japanese', 'ru': 'Russian', 'ar': 'Arabic'
-                }
-                
-                target_name = language_names.get(target_lang, target_lang)
-                
-                chat_completion = self.groq_client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": f"Translate the following text to {target_name}. Only provide the translation, no explanations:\n\n{text[:2000]}"
-                        }
-                    ],
-                    temperature=0.0,
-                    max_tokens=1000,
-                )
-                
-                translated_text = chat_completion.choices[0].message.content.strip()
-                
-                logger.info("✅ Translation complete (Groq LLM)")
-                
-                return {
-                    'original': text,
-                    'translated': translated_text,
-                    'source_lang': source_lang,
-                    'target_lang': target_lang,
-                    'success': True
-                }
-                
-            except Exception as groq_error:
-                logger.warning(f"Groq translation failed, using Google Translate: {groq_error}")
-                
-                # Fallback to Google Translate
-                translator = GoogleTranslator(source=source_lang, target=target_lang)
-                
-                if len(text) > 4500:
-                    chunks = [text[i:i + 4500] for i in range(0, len(text), 4000)]
-                    translated_chunks = []
-                    
-                    for i, chunk in enumerate(chunks):
-                        logger.info(f"Translating chunk {i+1}/{len(chunks)}...")
-                        translated_chunk = translator.translate(chunk)
-                        translated_chunks.append(translated_chunk)
-                    
-                    translated_text = ' '.join(translated_chunks)
-                else:
-                    translated_text = translator.translate(text[:5000])
-                
-                logger.info("✅ Translation complete (Google Translate)")
-                
-                return {
-                    'original': text,
-                    'translated': translated_text,
-                    'source_lang': source_lang,
-                    'target_lang': target_lang,
-                    'success': True
-                }
-            
-        except Exception as e:
-            logger.error(f"Translation failed: {e}")
+            code = detect(text)
+
+            names = {
+                "en": "English",
+                "hi": "Hindi",
+                "fr": "French",
+                "de": "German",
+                "es": "Spanish",
+                "ru": "Russian",
+                "ja": "Japanese",
+                "ar": "Arabic",
+                "zh-cn": "Chinese"
+            }
+
             return {
-                'original': text,
-                'translated': text,
-                'source_lang': source_lang,
-                'target_lang': target_lang,
-                'success': False,
-                'error': str(e)
+                "code": code,
+                "name": names.get(code, code)
+            }
+
+        except:
+            return {"code": "en", "name": "English"}
+
+
+
+    # =====================================================
+    # Translation
+    # =====================================================
+
+    def translate_text(
+        self,
+        text: str,
+        source_lang="auto",
+        target_lang="en"
+    ) -> dict:
+
+
+        try:
+
+            logger.info("🌐 Translating...")
+
+
+            # ---------------------------
+            # Cache
+            # ---------------------------
+            cache_key = (text, source_lang, target_lang)
+
+            if cache_key in self.translation_cache:
+                return self.translation_cache[cache_key]
+
+
+            # ---------------------------
+            # Detect language
+            # ---------------------------
+            if source_lang == "auto":
+
+                detected = self.detect_language(text)
+
+                source_lang = detected["code"]
+
+                logger.info(
+                    f"Detected language: {detected['name']}"
+                )
+
+
+            # ---------------------------
+            # Same language
+            # ---------------------------
+            if source_lang == target_lang:
+
+                result = {
+                    "original": text,
+                    "translated": text,
+                    "source_lang": source_lang,
+                    "target_lang": target_lang,
+                    "success": True
+                }
+
+                self.translation_cache[cache_key] = result
+                return result
+
+
+            # ---------------------------
+            # Prefer Google for Hindi
+            # ---------------------------
+            if source_lang == "hi" or target_lang == "hi":
+
+                logger.info("Using Google Translate (Indic)")
+
+                translated = self._google_translate(
+                    text, source_lang, target_lang
+                )
+
+                result = self._build_result(
+                    text, translated, source_lang, target_lang
+                )
+
+                self.translation_cache[cache_key] = result
+                return result
+
+
+            # ---------------------------
+            # Try Groq
+            # ---------------------------
+            try:
+
+                translated = self._groq_translate(
+                    text, source_lang, target_lang
+                )
+
+                result = self._build_result(
+                    text, translated, source_lang, target_lang
+                )
+
+                self.translation_cache[cache_key] = result
+                return result
+
+
+            except Exception as e:
+
+                logger.warning(f"Groq failed → Google: {e}")
+
+                translated = self._google_translate(
+                    text, source_lang, target_lang
+                )
+
+                result = self._build_result(
+                    text, translated, source_lang, target_lang
+                )
+
+                self.translation_cache[cache_key] = result
+                return result
+
+
+        except Exception as e:
+
+            logger.error(f"❌ Translation failed: {e}")
+
+            return {
+                "original": text,
+                "translated": text,
+                "success": False,
+                "error": str(e)
             }
 
 
-# ---------------------------
-# Global Singleton
-# ---------------------------
+
+    # =====================================================
+    # Helpers
+    # =====================================================
+
+    def _groq_translate(self, text, src, tgt):
+
+        names = {
+            "en": "English",
+            "hi": "Hindi",
+            "fr": "French",
+            "de": "German",
+            "es": "Spanish",
+            "ru": "Russian",
+            "ja": "Japanese",
+            "ar": "Arabic",
+            "zh-cn": "Chinese"
+        }
+
+        src_name = names.get(src, src)
+        tgt_name = names.get(tgt, tgt)
+
+
+        prompt = f"""
+Translate the following {src_name} text to {tgt_name}.
+Only return the translation.
+
+Text:
+{text[:2000]}
+"""
+
+
+        completion = self.groq_client.chat.completions.create(
+
+            model="llama-3.1-8b-instant",
+
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+
+            temperature=0,
+            max_tokens=1000
+        )
+
+
+        return completion.choices[0].message.content.strip()
+
+
+
+    def _google_translate(self, text, src, tgt):
+
+        translator = GoogleTranslator(
+            source=src,
+            target=tgt
+        )
+
+        max_len = 4000
+
+
+        if len(text) <= max_len:
+            return translator.translate(text)
+
+
+        chunks = [
+            text[i:i + max_len]
+            for i in range(0, len(text), max_len)
+        ]
+
+
+        results = []
+
+        for i, chunk in enumerate(chunks, 1):
+
+            logger.info(f"Chunk {i}/{len(chunks)}")
+
+            results.append(
+                translator.translate(chunk)
+            )
+
+
+        return " ".join(results)
+
+
+
+    def _build_result(self, orig, trans, src, tgt):
+
+        return {
+            "original": orig,
+            "translated": trans,
+            "source_lang": src,
+            "target_lang": tgt,
+            "success": True
+        }
+
+
+
+# =====================================================
+# Singleton
+# =====================================================
+
 pipeline = TranscribeFlowPipeline()
