@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
 
-from models import pipeline
+from backend.models import pipeline
 
 
 # =====================================================
@@ -168,8 +168,8 @@ app.add_middleware(
 # Storage
 # =====================================================
 
-UPLOAD_DIR = "uploads"
-FRONTEND_DIR = "frontend"
+UPLOAD_DIR = "../uploads"
+FRONTEND_DIR = "../frontend"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(FRONTEND_DIR, exist_ok=True)
