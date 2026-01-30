@@ -54,4 +54,4 @@ class UserStatsResponse(BaseModel):
     total_files: int
     total_minutes: float
     recent_files_count: int
-    account_created: 
+    account_created: datetime

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,13 +11,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="app-container">
     <!-- Navigation -->
     <nav class="app-nav">
       <div class="nav-container">
         <div class="nav-logo">
-          <a href="./index.html" class="logo-link">
+          <a href="/index" class="logo-link">
             <span class="logo-text">
               Transcribe<span class="logo-accent">Flow</span>
             </span>
@@ -28,7 +30,7 @@
             <i class="fas fa-trash-alt"></i>
             <span>Clear All</span>
           </button>
-          <a href="./index.html" class="nav-cta">
+          <a href="/index" class="nav-cta">
             <i class="fas fa-home"></i>
             <span>Back to Home</span>
           </a>
@@ -88,7 +90,7 @@
                   Select the language spoken in your audio file for better accuracy
                 </p>
               </div>
-              
+
               <!-- Dropzone -->
               <div class="dropzone-simple" id="dropzone">
                 <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg">
@@ -202,17 +204,31 @@
         </div>
       </div>
 
-    <!-- Toast Container -->
-    <div id="toastContainer" class="toast-container"></div>
+      <!-- Toast Container -->
+      <div id="toastContainer" class="toast-container"></div>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <div class="footer-copyright">
-        © 2026 TranscribeFlow. All rights reserved.
-      </div>
-    </footer>
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div class="footer-copyright">
+          © 2026 TranscribeFlow. All rights reserved.
+        </div>
+      </footer>
   </div>
 
-  <script src="./upload.js"></script>
+<script src="./upload.js"></script>
+<script src="./auth-check.js"></script>
+<script>
+    // Page is already protected by backend - just load user info
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const userInfo = await getUserInfo();
+            if (userInfo) {
+                displayUserInfo(userInfo.name, userInfo.picture);
+            }
+        } catch (error) {
+            console.error('Failed to load user info:', error);
+        }
+    });
+</script>
 </body>
 </html>
