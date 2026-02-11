@@ -85,25 +85,44 @@ pip install -r requirements.txt
 ```
 *Note: This may take a few minutes as it installs PyTorch and other AI libraries.*
 
-### 4. Configure Environment Variables
-Create a `.env` file in the root directory and add your API keys:
+### 4. Database Setup (MySQL)
+TranscribeFlow uses MySQL for robust data persistence.
+
+1.  **Install MySQL Server:** Download and install from [mysql.com](https://dev.mysql.com/downloads/mysql/) or use Docker.
+2.  **Create Database:** Log in to your MySQL shell and run:
+    ```sql
+    CREATE DATABASE transcribeflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE USER 'tf_user'@'localhost' IDENTIFIED BY 'your_password';
+    GRANT ALL PRIVILEGES ON transcribeflow.* TO 'tf_user'@'localhost';
+    FLUSH PRIVILEGES;
+    ```
+
+### 5. Configure Environment Variables
+Create a `.env` file in the root directory and add your API keys and database credentials:
 
 ```ini
-# .env file
+# AI Service Keys
 GROQ_API_KEY=your_groq_api_key_here
 HUGGINGFACE_TOKEN=your_huggingface_token_here
+
+# Database Configuration
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=tf_user
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=transcribeflow
 ```
 *   Get a Groq API Key: [console.groq.com](https://console.groq.com)
 *   Get a Hugging Face Token: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
-### 5. Run the Application
+### 6. Run the Application
 Start the FastAPI server:
 
 ```bash
 uvicorn backend.main:app --reload
 ```
 
-### 6. Access the App
+### 7. Access the App
 Open your browser and navigate to:
 **[http://localhost:8000](http://localhost:8000)**
 
