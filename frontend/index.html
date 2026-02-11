@@ -1,65 +1,153 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TranscribeFlow</title>
-  <link rel="stylesheet" href="./styles.css">
+  <title>TranscribeFlow | AI-Powered Audio Transcription</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
-
 <body>
-
-  <body>
-    <div class="landing-container">
-      <!-- Navigation -->
-      <nav class="landing-nav">
-        <div class="nav-container">
-          <div class="nav-logo">
-            <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
+  <div class="landing-container">
+    
+    <!-- Premium Navigation -->
+    <nav class="premium-nav">
+      <div class="nav-container">
+        <div class="nav-brand">
+          <div class="logo-icon">
+            <i class="fas fa-wave-square"></i>
           </div>
-          <a href="/login" class="nav-cta secondary" id="loginBtn">
+          <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
+          <span class="nav-badge">PRO</span>
+        </div>
+        
+        <div class="nav-links">
+          <a href="#features" class="nav-link">Features</a>
+          <a href="#benefits" class="nav-link">Benefits</a>
+          <a href="#metrics" class="nav-link">Metrics</a>
+          <a href="#faq" class="nav-link">FAQ</a>
+        </div>
+        
+        <div class="nav-actions">
+          <a href="/login" class="nav-btn secondary">
             <i class="fas fa-sign-in-alt"></i>
-            <span>Login</span>
+            <span>Sign In</span>
           </a>
-          <a href="/upload" class="nav-cta">
+          <a href="/upload" class="nav-btn primary">
             <span>Launch App</span>
             <i class="fas fa-arrow-right"></i>
           </a>
         </div>
-      </nav>
+        
+        <button class="mobile-menu-btn">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </nav>
 
-      <!-- Hero Section -->
-      <main class="hero-section">
-        <div class="hero-container">
-
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-container">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="badge-text">AI-Powered Transcription</span>
+            <span class="badge-pulse"></span>
+          </div>
+          
           <h1 class="hero-title">
-            <span class="title-line">Transform Audio into</span>
-            <span class="title-line title-accent">Actionable Insights</span>
+            Transform Audio into
+            <span class="title-gradient">Actionable Insights</span>
           </h1>
-
+          
           <p class="hero-subtitle">
-            Professional-grade audio transcription and summarization for meetings,
+            Professional-grade audio transcription and summarization for meetings, 
             interviews, lectures, and podcasts. Fast, accurate, and secure.
           </p>
-
+          
           <div class="hero-cta">
-            <a href="/upload" class="cta-button-primary">
+            <a href="/upload" class="btn-primary-xl">
               <span>Start Transcribing Free</span>
               <i class="fas fa-arrow-right"></i>
             </a>
+            <a href="#features" class="btn-secondary-xl">
+              <span>Explore Features</span>
+              <i class="fas fa-chart-line"></i>
+            </a>
+          </div>
+          
+          <div class="hero-stats">
+            <div class="stat-item">
+              <div class="stat-value">99%</div>
+              <div class="stat-label">Accuracy Rate</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value">5M+</div>
+              <div class="stat-label">Minutes Transcribed</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value">50+</div>
+              <div class="stat-label">Languages Supported</div>
+            </div>
           </div>
         </div>
-      </main>
-
-      <!-- Features Section -->
-      <section class="features-section" id="features">
-        <div class="section-header">
-          <h2 class="section-title">Why Professionals Choose TranscribeFlow</h2>
-          <p class="section-subtitle">Powerful features designed for productivity</p>
+        
+        <div class="hero-preview">
+          <div class="dashboard-mockup">
+            <div class="mockup-header">
+              <div class="mockup-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <div class="mockup-title">TranscribeFlow Dashboard</div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-waveform">
+                <div class="wave-bar" style="height: 30%"></div>
+                <div class="wave-bar" style="height: 70%"></div>
+                <div class="wave-bar" style="height: 50%"></div>
+                <div class="wave-bar" style="height: 90%"></div>
+                <div class="wave-bar" style="height: 40%"></div>
+                <div class="wave-bar" style="height: 60%"></div>
+                <div class="wave-bar" style="height: 80%"></div>
+              </div>
+              <div class="mockup-transcript">
+                <div class="transcript-line active">
+                  <span class="speaker">[Interviewer]:</span> Can you tell us about your experience?
+                </div>
+                <div class="transcript-line">
+                  <span class="speaker">[Candidate]:</span> I have five years in product management...
+                </div>
+              </div>
+              <div class="mockup-summary">
+                <div class="summary-title">AI Summary</div>
+                <div class="summary-content">Key points: Experience, Leadership, Results</div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+      
+      <div class="hero-grid-bg">
+        <div class="grid-line"></div>
+        <div class="grid-line"></div>
+        <div class="grid-line"></div>
+      </div>
+    </section>
 
+    <!-- Core Features -->
+    <section class="features-section" id="features">
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Professional-Grade Features</h2>
+          <p class="section-subtitle">Everything you need for productive audio workflow</p>
+        </div>
+        
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-icon">
@@ -69,8 +157,9 @@
             <p class="feature-description">
               Export transcripts as TXT. Share with colleagues or clients seamlessly.
             </p>
+            <div class="feature-tag">Multi-format</div>
           </div>
-
+          
           <div class="feature-card">
             <div class="feature-icon">
               <i class="fas fa-search"></i>
@@ -79,9 +168,10 @@
             <p class="feature-description">
               Instantly find keywords and phrases within your transcripts with our powerful search.
             </p>
+            <div class="feature-tag">AI-Powered</div>
           </div>
-
-          <div class="feature-card">
+          
+          <div class="feature-card highlight">
             <div class="feature-icon">
               <i class="fas fa-clipboard-check"></i>
             </div>
@@ -89,8 +179,9 @@
             <p class="feature-description">
               Get concise summaries highlighting key points, decisions, and action items.
             </p>
+            <div class="feature-tag">Most Popular</div>
           </div>
-
+          
           <div class="feature-card">
             <div class="feature-icon">
               <i class="fas fa-headphones"></i>
@@ -99,8 +190,9 @@
             <p class="feature-description">
               Full-featured audio player with seeking, and volume adjustment.
             </p>
+            <div class="feature-tag">Real-time</div>
           </div>
-
+          
           <div class="feature-card">
             <div class="feature-icon">
               <i class="fas fa-history"></i>
@@ -109,8 +201,9 @@
             <p class="feature-description">
               Quick access to your recent transcriptions.
             </p>
+            <div class="feature-tag">Cloud Sync</div>
           </div>
-
+          
           <div class="feature-card">
             <div class="feature-icon">
               <i class="fas fa-cogs"></i>
@@ -119,68 +212,297 @@
             <p class="feature-description">
               Adjust font size to match your workflow preferences.
             </p>
+            <div class="feature-tag">Flexible</div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- CTA Section -->
-      <section class="cta-section">
-        <div class="cta-container">
-          <h2 class="cta-title">Ready to Transform Your Audio Workflow?</h2>
+    <!-- Benefits by User Type -->
+    <section class="benefits-section" id="benefits">
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Optimized for Every Professional</h2>
+          <p class="section-subtitle">Tailored benefits for different workflows</p>
+        </div>
+        
+        <div class="benefits-tabs">
+          <div class="tab-nav">
+            <button class="tab-btn active" data-tab="creators">Content Creators</button>
+            <button class="tab-btn" data-tab="teams">Business Teams</button>
+            <button class="tab-btn" data-tab="academia">Academia</button>
+            <button class="tab-btn" data-tab="legal">Legal Professionals</button>
+          </div>
+          
+          <div class="tab-content">
+            <div class="tab-pane active" id="creators">
+              <div class="benefits-grid">
+                <div class="benefit-item">
+                  <div class="benefit-icon">
+                    <i class="fas fa-podcast"></i>
+                  </div>
+                  <h3>Podcast Production</h3>
+                  <p>Turn episodes into searchable, editable transcripts in minutes</p>
+                </div>
+                <div class="benefit-item">
+                  <div class="benefit-icon">
+                    <i class="fas fa-subtitles"></i>
+                  </div>
+                  <h3>Auto-Subtitles</h3>
+                  <p>Generate accurate subtitles for video content automatically</p>
+                </div>
+                <div class="benefit-item">
+                  <div class="benefit-icon">
+                    <i class="fas fa-bolt"></i>
+                  </div>
+                  <h3>Rapid Turnaround</h3>
+                  <p>Process hours of audio in minutes, not days</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics Dashboard -->
+    <section class="metrics-section" id="metrics">
+      <div class="section-container">
+        <div class="metrics-header">
+          <h2 class="section-title">Trusted by Industry Leaders</h2>
+          <p class="section-subtitle">Real-time performance metrics</p>
+        </div>
+        
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value" data-count="99.2">0</div>
+            <div class="metric-label">Accuracy Score</div>
+            <div class="metric-trend up">
+              <i class="fas fa-arrow-up"></i>
+              <span>2.4% this month</span>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-value" data-count="15000">0</div>
+            <div class="metric-label">Active Users</div>
+            <div class="metric-trend up">
+              <i class="fas fa-arrow-up"></i>
+              <span>12% growth</span>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-value" data-count="3.2">0</div>
+            <div class="metric-label">Avg Processing Time (min)</div>
+            <div class="metric-trend down">
+              <i class="fas fa-arrow-down"></i>
+              <span>0.8s faster</span>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-value" data-count="4.9">0</div>
+            <div class="metric-label">User Rating</div>
+            <div class="metric-trend stable">
+              <i class="fas fa-star"></i>
+              <span>500+ reviews</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="metrics-chart">
+          <div class="chart-header">
+            <h3>Processing Volume (Last 30 Days)</h3>
+            <div class="chart-legend">
+              <span class="legend-item">
+                <span class="legend-dot audio"></span>
+                Audio Files
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot video"></span>
+                Video Files
+              </span>
+            </div>
+          </div>
+          <div class="chart-bars">
+            <!-- Chart bars would be generated by JS -->
+            <div class="bar-wrapper">
+              <div class="bar audio" style="height: 70%"></div>
+              <div class="bar video" style="height: 50%"></div>
+              <div class="bar-label">Mon</div>
+            </div>
+            <!-- Additional bars... -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section" id="faq">
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Frequently Asked Questions</h2>
+          <p class="section-subtitle">Everything you need to know</p>
+        </div>
+        
+        <div class="faq-grid">
+          <div class="faq-item">
+            <div class="faq-question">
+              <h3>What audio formats are supported?</h3>
+              <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>We support MP3, WAV, M4A, FLAC, and all major audio formats. Video files with audio tracks are also supported.</p>
+            </div>
+          </div>
+          
+          <div class="faq-item">
+            <div class="faq-question">
+              <h3>How accurate is the transcription?</h3>
+              <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>Our AI achieves 99% accuracy for clear audio. For optimal results, ensure good recording quality with minimal background noise.</p>
+            </div>
+          </div>
+          
+          <div class="faq-item">
+            <div class="faq-question">
+              <h3>Is my data secure?</h3>
+              <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>All files are encrypted in transit and at rest. We never share your data and provide automatic deletion options.</p>
+            </div>
+          </div>
+          
+          <div class="faq-item">
+            <div class="faq-question">
+              <h3>Can I edit the transcripts?</h3>
+              <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>Yes, our built-in editor allows you to make corrections, add speaker labels, and format text before export.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+      <div class="cta-container">
+        <div class="cta-content">
+          <h2 class="cta-title">Ready to Revolutionize Your Audio Workflow?</h2>
           <p class="cta-subtitle">
             Join thousands of professionals who save hours every week with TranscribeFlow.
           </p>
-          <a href="/upload" class="cta-button-large">
-            <span>Start Transcribing Now</span>
-            <i class="fas fa-arrow-right"></i>
-          </a>
+          
+          <div class="cta-features">
+            <div class="feature-check">
+              <i class="fas fa-check-circle"></i>
+              <span>No credit card required</span>
+            </div>
+            <div class="feature-check">
+              <i class="fas fa-check-circle"></i>
+              <span>Free 500 minutes monthly</span>
+            </div>
+            <div class="feature-check">
+              <i class="fas fa-check-circle"></i>
+              <span>Cancel anytime</span>
+            </div>
+          </div>
+          
+          <div class="cta-actions">
+            <a href="/upload" class="btn-primary-xxl">
+              <span>Start Transcribing Now</span>
+              <i class="fas fa-arrow-right"></i>
+            </a>
+            <a href="/demo" class="btn-outline-xl">
+              <span>Watch Demo</span>
+              <i class="fas fa-play-circle"></i>
+            </a>
+          </div>
         </div>
-      </section>
-
-      <!-- Footer -->
-      <footer class="landing-footer">
-        <div class="footer-copyright">
-          © 2026 TranscribeFlow. All rights reserved.
+        
+        <div class="cta-badge">
+          <div class="badge-content">
+            <span class="badge-title">Most Trusted</span>
+            <div class="badge-rating">
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star-half-alt"></i>
+              <span>4.9/5</span>
+            </div>
+          </div>
         </div>
-      </footer>
-    </div>
+      </div>
+    </section>
 
-    <script>
-      // Simple scroll animation for feature cards
-      document.addEventListener('DOMContentLoaded', function () {
-        // Add hover effects for feature cards
-        const featureCards = document.querySelectorAll('.feature-card');
+    <!-- Footer -->
+    <footer class="premium-footer">
+      <div class="footer-container">
+        <div class="footer-main">
+          <div class="footer-brand">
+            <div class="footer-logo">
+              <i class="fas fa-wave-square"></i>
+              <span>TranscribeFlow</span>
+            </div>
+            <p class="footer-tagline">
+              Professional audio transcription powered by AI.
+            </p>
+            <div class="footer-social">
+              <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+              <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+              <a href="#" class="social-link"><i class="fab fa-discord"></i></a>
+            </div>
+          </div>
+          
+          <div class="footer-links">
+            <div class="link-group">
+              <h4>Product</h4>
+              <a href="#features" class="footer-link">Features</a>
+              <a href="#benefits" class="footer-link">Use Cases</a>
+              <a href="/pricing" class="footer-link">Pricing</a>
+              <a href="/updates" class="footer-link">Updates</a>
+            </div>
+            
+            <div class="link-group">
+              <h4>Resources</h4>
+              <a href="/docs" class="footer-link">Documentation</a>
+              <a href="/api" class="footer-link">API</a>
+              <a href="/blog" class="footer-link">Blog</a>
+              <a href="/support" class="footer-link">Support</a>
+            </div>
+            
+            <div class="link-group">
+              <h4>Company</h4>
+              <a href="/about" class="footer-link">About</a>
+              <a href="/careers" class="footer-link">Careers</a>
+              <a href="/contact" class="footer-link">Contact</a>
+              <a href="/legal" class="footer-link">Legal</a>
+            </div>
+          </div>
+        </div>
+        
+        <div class="footer-bottom">
+          <div class="copyright">
+            © 2026 TranscribeFlow. All rights reserved.
+          </div>
+          <div class="footer-legal">
+            <a href="/privacy" class="legal-link">Privacy Policy</a>
+            <a href="/terms" class="legal-link">Terms of Service</a>
+            <a href="/cookies" class="legal-link">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
 
-        featureCards.forEach(card => {
-          card.addEventListener('mouseenter', function () {
-            this.style.transform = 'translateY(-8px)';
-          });
-
-          card.addEventListener('mouseleave', function () {
-            this.style.transform = 'translateY(0)';
-          });
-        });
-
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-          anchor.addEventListener('click', function (e) {
-            const href = this.getAttribute('href');
-
-            if (href !== '#') {
-              e.preventDefault();
-              const targetElement = document.querySelector(href);
-
-              if (targetElement) {
-                window.scrollTo({
-                  top: targetElement.offsetTop - 80,
-                  behavior: 'smooth'
-                });
-              }
-            }
-          });
-        });
-      });
-    </script>
-  </body>
-
+  <script src="/static/script.js"></script>
+</body>
 </html>

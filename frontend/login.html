@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TranscribeFlow | Sign In</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="static/login.css">
+</head>
+
+<body>
+    <div class="auth-page">
+        <!-- Galaxy Background Layers - Static -->
+        <div class="galaxy-nebula-1"></div>
+        <div class="galaxy-nebula-2"></div>
+        <div class="galaxy-nebula-3"></div>
+        <div class="milky-way-band"></div>
+
+        <!-- Premium Navigation -->
+        <nav class="premium-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <a href="/" class="logo-link">
+                        <div class="logo-icon">
+                            <i class="fas fa-wave-square"></i>
+                        </div>
+                        <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
+                    </a>
+                </div>
+
+                <div class="nav-actions">
+                    <a href="/" class="nav-btn outline">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="/register" class="nav-btn primary">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Sign Up</span>
+                    </a>
+                </div>
+
+                <button class="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Auth Container -->
+        <div class="auth-container">
+            <div class="auth-card">
+                <!-- Auth Header -->
+                <div class="auth-header">
+                    <div class="auth-logo-icon">
+                        <i class="fas fa-wave-square"></i>
+                    </div>
+                    <h1 class="auth-title">Welcome back</h1>
+                    <p class="auth-subtitle">Sign in to your account</p>
+                </div>
+
+                <!-- Auth Form -->
+                <form id="loginForm" class="auth-form">
+                    <!-- Username Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user"></i>
+                            <span>Username</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="username" class="form-input" placeholder="Enter your username"
+                                autocomplete="username" required>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-lock"></i>
+                            <span>Password</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="password" class="form-input" placeholder="Enter your password"
+                                autocomplete="current-password" required>
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()"
+                                title="Show/hide password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Forgot Password Link
+                    <div class="forgot-password-container">
+                        <a href="/forgot-password" class="forgot-link">
+                            Forgot password?
+                        </a>
+                    </div> -->
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="loginBtn" class="btn-auth">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Sign In</span>
+                        <div class="spinner"></div>
+                    </button>
+
+                    <!-- Messages Container -->
+                    <div id="messageContainer" class="message-container">
+                        <div id="errorMessage" class="message error" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span id="errorText"></span>
+                        </div>
+                        <div id="successMessage" class="message success" style="display: none;">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="successText"></span>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Footer -->
+                <div class="auth-footer">
+                    Don't have an account?
+                    <a href="/register" class="auth-link">
+                        Sign up
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/login.js"></script>
+</body>
+
+</html>

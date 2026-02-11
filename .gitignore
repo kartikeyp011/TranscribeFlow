@@ -21,33 +21,18 @@ ENV/
 
 # IDE
 .vscode/
-.idea/
-*.swp
-*.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
-.Trash-*
 
 # Project specific
 backend/uploads/
-*.log
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Database
-*.db
-*.sqlite3
 
 uploads/ 
 models_cache/
-sample/
+others/
+
+#Random FIles
+create_tables.pysample/

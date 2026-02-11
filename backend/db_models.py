@@ -7,14 +7,15 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    auth0_user_id = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
     name = Column(String(255))
-    picture = Column(Text)  # Profile picture URL from Auth0
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     total_files = Column(Integer, default=0)
     total_minutes = Column(Float, default=0.0)
+    is_active = Column(Boolean, default=True)
 
 
 class File(Base):
@@ -32,3 +33,7 @@ class File(Base):
     duration_seconds = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     is_deleted = Column(Boolean, default=False)
+    word_timestamps = Column(Text, nullable=True)
+    speaker_segments = Column(Text, nullable=True)
+    is_starred = Column(Boolean, default=False)
+    is_pinned = Column(Boolean, default=False)

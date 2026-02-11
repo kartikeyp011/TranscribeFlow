@@ -2,25 +2,42 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
+# =====================================================
 # User Schemas
+# =====================================================
+
 class UserBase(BaseModel):
     email: EmailStr
     name: Optional[str] = None
 
-class UserCreate(UserBase):
-    auth0_user_id: str
-    picture: Optional[str] = None
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str  # ✅ Plain password (will be hashed)
+    name: Optional[str] = None
 
-class UserResponse(UserBase):
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
     id: str
-    auth0_user_id: str
-    picture: Optional[str] = None
+    username: str
+    email: EmailStr
+    name: Optional[str] = None
     created_at: datetime
     total_files: int
     total_minutes: float
     
     class Config:
         from_attributes = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    user_id: Optional[str] = None
 
 
 # File Schemas
@@ -35,6 +52,8 @@ class FileCreate(FileBase):
     transcript: Optional[str] = None
     summary: Optional[str] = None
     audio_url: Optional[str] = None
+    word_timestamps: Optional[str] = None
+    speaker_segments: Optional[str] = None
 
 class FileResponse(FileBase):
     id: str
@@ -44,6 +63,8 @@ class FileResponse(FileBase):
     summary: Optional[str] = None
     audio_url: Optional[str] = None
     created_at: datetime
+    word_timestamps: Optional[str] = None
+    speaker_segments: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -55,3 +76,4 @@ class UserStatsResponse(BaseModel):
     total_minutes: float
     recent_files_count: int
     account_created: datetime
+    word_timestamps: Optional[str] = None

@@ -5,13 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TranscribeFlow - Results</title>
-  <link rel="stylesheet" href="./results.css">
+  <link rel="stylesheet" href="/static/results.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    /* Enhanced Sky/Galaxy Background */
+    /* Enhanced Background - Matching Upload Page */
     body::before {
       content: '';
       position: fixed;
@@ -20,13 +20,13 @@
       width: 100%;
       height: 100%;
       background:
-        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.2) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 20% 80%, rgba(94, 234, 212, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(94, 234, 212, 0.06) 0%, transparent 50%),
         linear-gradient(135deg,
-          rgba(10, 10, 20, 0.8) 0%,
-          rgba(17, 17, 32, 0.8) 50%,
-          rgba(22, 22, 46, 0.8) 100%);
+          rgba(10, 15, 28, 0.95) 0%,
+          rgba(17, 24, 39, 0.95) 50%,
+          rgba(26, 35, 50, 0.95) 100%);
       z-index: -1;
     }
 
@@ -75,8 +75,8 @@
       width: 100%;
       height: 100%;
       background:
-        radial-gradient(circle at 10% 90%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
-        radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.1) 0%, transparent 40%);
+        radial-gradient(circle at 10% 90%, rgba(94, 234, 212, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
       z-index: -2;
       opacity: 0.5;
     }
@@ -132,7 +132,7 @@
             <i class="fas fa-arrow-left"></i>
             <span>Back to Upload</span>
           </a>
-          <a href="/index" class="nav-cta">
+          <a href="/" class="nav-cta">
             <i class="fas fa-home"></i>
             <span>Home</span>
           </a>
@@ -537,8 +537,42 @@
     </footer>
   </div>
 
-  <script src="./results.js"></script>
+  <script src="/static/results.js"></script>
   <script>
+
+    // Check authentication
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    // Helper function to make authenticated API calls
+    async function fetchWithAuth(url, options = {}) {
+      const token = localStorage.getItem('access_token');
+
+      const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`
+      };
+
+      const response = await fetch(url, { ...options, headers });
+
+      // If unauthorized, redirect to login
+      if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+        return;
+      }
+
+      return response;
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+
     // Font size button functionality
     document.addEventListener('DOMContentLoaded', function () {
       // Font size buttons
@@ -556,16 +590,22 @@
           // Update hidden select
           fontSizeSelect.value = size;
 
-          // Apply font size to transcript content
-          const transcriptContent = document.getElementById('transcript');
-          const summaryContent = document.getElementById('summary');
-          const translatedTranscript = document.getElementById('translatedTranscript');
-          const translatedSummary = document.getElementById('translatedSummary');
+          // Apply font size using CSS custom property (avoids breaking rem-based layout)
+          document.documentElement.style.setProperty('--page-font-size', size + 'px');
 
-          if (transcriptContent) transcriptContent.style.fontSize = size + 'px';
-          if (summaryContent) summaryContent.style.fontSize = size + 'px';
-          if (translatedTranscript) translatedTranscript.style.fontSize = size + 'px';
-          if (translatedSummary) translatedSummary.style.fontSize = size + 'px';
+          // Apply directly to body and all text content areas
+          document.body.style.fontSize = size + 'px';
+
+          // Apply to key content areas
+          const contentAreas = document.querySelectorAll(
+            '#transcript, #summary, #translatedTranscript, #translatedSummary, ' +
+            '.card, .metadata-value-results, .metadata-label-results, ' +
+            '.header-title-section-results, .header-subtitle-results, ' +
+            '.file-info-card-results, .toast, p, li, span, h3, h4'
+          );
+          contentAreas.forEach(el => {
+            el.style.fontSize = size + 'px';
+          });
         });
       });
 
@@ -578,19 +618,19 @@
     });
   </script>
 
-<script src="./auth-check.js"></script>
-<script>
+  <!-- <script>
     // Page is already protected by backend - just load user info
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            const userInfo = await getUserInfo();
-            if (userInfo) {
-                displayUserInfo(userInfo.name, userInfo.picture);
-            }
-        } catch (error) {
-            console.error('Failed to load user info:', error);
+    document.addEventListener('DOMContentLoaded', async function () {
+      try {
+        const userInfo = await getUserInfo();
+        if (userInfo) {
+          displayUserInfo(userInfo.name, userInfo.picture);
         }
+      } catch (error) {
+        console.error('Failed to load user info:', error);
+      }
     });
-</script>
+  </script> -->
 </body>
+
 </html>

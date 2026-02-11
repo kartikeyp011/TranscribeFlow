@@ -1,0 +1,525 @@
+/* ===== LOGIN PAGE STYLES ===== */
+@import url('./styles.css');
+
+/* Galaxy Background - Static */
+.auth-page {
+    min-height: 100vh;
+    max-height: 900px;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(ellipse at 30% 40%, #0a0e1a 0%, #03050a 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Static Star Field */
+.auth-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 15px 85px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(1.5px 1.5px at 52px 220px, #ffe9c4, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 94px 150px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 138px 45px, #ffd700, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 187px 280px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(1.5px 1.5px at 235px 120px, #ffe4b5, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 289px 350px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 336px 190px, #ffe0b0, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 388px 410px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(1.5px 1.5px at 432px 75px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 479px 520px, #ffdab9, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 523px 250px, #ffe4cd, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 578px 590px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(1.5px 1.5px at 624px 380px, #ffe4c4, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 671px 150px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 725px 460px, #fff5e6, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 779px 320px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(1.5px 1.5px at 826px 540px, #ffebcd, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 874px 210px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(2px 2px at 928px 620px, #ffe4b5, rgba(0, 0, 0, 0)),
+        radial-gradient(1px 1px at 975px 430px, #ffffff, rgba(0, 0, 0, 0)),
+        radial-gradient(1.5px 1.5px at 1024px 180px, #ffefdb, rgba(0, 0, 0, 0));
+    background-size: 400px 400px;
+    background-repeat: repeat;
+    opacity: 0.9;
+    z-index: 0;
+}
+
+/* Galaxy Core - Static */
+.auth-page::after {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 15%;
+    width: 70%;
+    height: 70%;
+    background:
+        radial-gradient(ellipse at 30% 40%,
+            rgba(94, 234, 212, 0.08) 0%,
+            transparent 60%),
+        radial-gradient(ellipse at 70% 60%,
+            rgba(139, 92, 246, 0.06) 0%,
+            transparent 60%),
+        radial-gradient(ellipse at 50% 50%,
+            rgba(59, 130, 246, 0.04) 0%,
+            transparent 70%);
+    filter: blur(40px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Distant Nebula - Static */
+.galaxy-nebula-1 {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    height: 90%;
+    background: radial-gradient(circle at 20% 30%,
+            rgba(99, 102, 241, 0.05) 0%,
+            transparent 50%);
+    filter: blur(60px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.galaxy-nebula-2 {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 80%;
+    height: 80%;
+    background: radial-gradient(circle at 80% 70%,
+            rgba(6, 182, 212, 0.04) 0%,
+            transparent 50%);
+    filter: blur(60px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.galaxy-nebula-3 {
+    position: absolute;
+    top: 40%;
+    left: 30%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle at 50% 50%,
+            rgba(168, 85, 247, 0.03) 0%,
+            transparent 50%);
+    filter: blur(50px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Milky Way Band - Static */
+.milky-way-band {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at 20% 50%,
+            rgba(255, 255, 255, 0.02) 0%,
+            transparent 40%),
+        radial-gradient(ellipse at 80% 30%,
+            rgba(200, 220, 255, 0.01) 0%,
+            transparent 40%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Premium Navigation Overrides */
+.auth-page .premium-nav {
+    background: rgba(8, 12, 25, 0.7);
+    backdrop-filter: blur(20px);
+    position: relative;
+    z-index: 2;
+    border-bottom: 1px solid rgba(94, 234, 212, 0.15);
+}
+
+.auth-page .nav-brand {
+    display: flex;
+    align-items: center;
+}
+
+.auth-page .logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+}
+
+.auth-page .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--gradient-accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--graphite-dark);
+    font-size: 1.2rem;
+    box-shadow: 0 0 20px rgba(94, 234, 212, 0.2);
+}
+
+.auth-page .logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: 0 0 20px rgba(94, 234, 212, 0.3);
+}
+
+.auth-page .logo-accent {
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Auth Container */
+.auth-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* Auth Card - Clean, No Float */
+.auth-card {
+    background: rgba(18, 24, 38, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(94, 234, 212, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.auth-card:hover {
+    border-color: rgba(94, 234, 212, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Auth Header */
+.auth-header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.auth-logo-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--gradient-accent);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--graphite-dark);
+    font-size: 1.75rem;
+    margin: 0 auto 1rem;
+    box-shadow: 0 0 20px rgba(94, 234, 212, 0.2);
+}
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.auth-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Form Group */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.form-label i {
+    color: var(--ice-blue);
+    font-size: 0.875rem;
+}
+
+/* Input Wrapper */
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.875rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+/* Form Input */
+.form-input {
+    width: 100%;
+    background: rgba(10, 15, 28, 0.6);
+    border: 1px solid var(--slate-border);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem 0.75rem 2.25rem;
+    border-radius: var(--border-radius-md);
+    font-size: 0.875rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.form-input:hover {
+    border-color: var(--ice-blue);
+    background: rgba(15, 22, 40, 0.7);
+}
+
+.form-input:focus {
+    border-color: var(--ice-blue);
+    background: rgba(20, 28, 48, 0.8);
+    box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.1);
+}
+
+.form-input::placeholder {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+/* Password Toggle */
+.toggle-password {
+    position: absolute;
+    right: 0.875rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.875rem;
+    transition: color 0.2s ease;
+}
+
+.toggle-password:hover {
+    color: var(--ice-blue);
+}
+
+/* Forgot Password */
+.forgot-password-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+}
+
+.forgot-link {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+    color: var(--ice-blue);
+}
+
+/* Auth Button */
+.btn-auth {
+    background: var(--gradient-accent);
+    color: var(--graphite-dark);
+    border: none;
+    padding: 0.75rem;
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-auth:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(94, 234, 212, 0.25);
+}
+
+.btn-auth:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Loading Spinner */
+.spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-top-color: var(--graphite-dark);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+.btn-auth.loading .spinner {
+    display: inline-block;
+}
+
+.btn-auth.loading i {
+    display: none;
+}
+
+/* Message Container */
+.message-container {
+    margin-top: 1rem;
+}
+
+.message {
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--border-radius-md);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.message i {
+    font-size: 0.875rem;
+}
+
+.message.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error);
+    color: var(--error);
+}
+
+.message.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+}
+
+/* Auth Footer */
+.auth-footer {
+    text-align: center;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--slate-border);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.auth-link {
+    color: var(--ice-blue);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.auth-link:hover {
+    color: var(--cyan-primary);
+    text-decoration: underline;
+}
+
+/* Animations - Only spinner */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .auth-card {
+        padding: 1.75rem;
+    }
+
+    .auth-logo-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 1.5rem;
+    }
+
+    .auth-title {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 1rem;
+    }
+
+    .auth-card {
+        padding: 1.5rem;
+    }
+}
+
+/* Mobile Navigation */
+@media (max-width: 768px) {
+    .auth-page .nav-actions {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(8, 12, 25, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 1rem;
+        border-top: 1px solid rgba(94, 234, 212, 0.2);
+        flex-direction: column;
+        gap: 0.5rem;
+        z-index: 100;
+    }
+
+    .auth-page .nav-actions.show {
+        display: flex;
+    }
+
+    .auth-page .mobile-menu-btn {
+        display: block;
+        background: transparent;
+        border: 1px solid rgba(94, 234, 212, 0.3);
+        color: var(--ice-blue);
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+    }
+}
+
+@media (min-width: 769px) {
+    .auth-page .mobile-menu-btn {
+        display: none;
+    }
+}

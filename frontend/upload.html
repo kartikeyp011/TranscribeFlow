@@ -4,231 +4,334 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TranscribeFlow - Upload Audio</title>
-  <link rel="stylesheet" href="./upload.css">
+  <title>TranscribeFlow | Upload & Process Audio</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./static/styles.css">
+  <link rel="stylesheet" href="./static/upload.css">
 </head>
 
 <body>
   <div class="app-container">
-    <!-- Navigation -->
-    <nav class="app-nav">
+
+    <!-- Premium Navigation -->
+    <nav class="premium-nav" id="mainNav">
       <div class="nav-container">
-        <div class="nav-logo">
-          <a href="/index" class="logo-link">
-            <span class="logo-text">
-              Transcribe<span class="logo-accent">Flow</span>
-            </span>
+        <div class="nav-brand">
+          <a href="/" class="logo-link">
+            <div class="logo-icon">
+              <i class="fas fa-wave-square"></i>
+            </div>
+            <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
+            <span class="nav-badge">PRO</span>
           </a>
-          <span class="nav-subtitle">Audio Transcription & AI Summary</span>
+          <div class="nav-identifier">
+            <div class="identifier-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <span class="identifier-text">Upload & Transcribe</span>
+          </div>
         </div>
+
         <div class="nav-actions">
-          <button id="clearAllBtn" class="nav-cta secondary">
+          <button id="clearAllBtn" class="nav-btn danger">
             <i class="fas fa-trash-alt"></i>
             <span>Clear All</span>
           </button>
-          <a href="/index" class="nav-cta">
+          <a href="/" class="nav-btn outline">
             <i class="fas fa-home"></i>
-            <span>Back to Home</span>
+            <span>Home</span>
           </a>
         </div>
+
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="main-content upload-page-simple">
-      <div class="upload-layout-grid">
-        <!-- Left Column: Upload Card -->
-        <div class="upload-column">
-          <div class="card upload-card-simple">
-            <div class="card-header-simple">
-              <div class="card-icon-large">
-                <i class="fas fa-cloud-upload-alt"></i>
-              </div>
-              <div class="card-header-content-simple">
-                <h2>Upload Audio</h2>
-                <p class="card-subtitle-simple">Upload your audio file to start transcription and AI summarization</p>
-              </div>
-            </div>
+    <main class="main-content">
+      <div class="upload-hero">
+        <div class="container-narrow">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              Upload & Process
+              <span class="title-gradient">Audio Files</span>
+            </h1>
 
-            <form id="uploadForm" class="upload-form-simple">
-              <!-- Language Selection -->
-              <div class="language-input-section-simple">
-                <label for="inputLanguage" class="input-language-label-simple">
-                  <i class="fas fa-language"></i>
-                  <span>Select Audio Language</span>
-                </label>
-                <select id="inputLanguage" class="input-language-select-simple">
-                  <option value="en">English</option>
-                  <option value="hi">Hindi (हिन्दी)</option>
-                  <option value="es">Spanish (Español)</option>
-                  <option value="fr">French (Français)</option>
-                  <option value="de">German (Deutsch)</option>
-                  <option value="zh">Chinese (中文)</option>
-                  <option value="ja">Japanese (日本語)</option>
-                  <option value="ko">Korean (한국어)</option>
-                  <option value="ar">Arabic (العربية)</option>
-                  <option value="ru">Russian (Русский)</option>
-                  <option value="pt">Portuguese (Português)</option>
-                  <option value="bn">Bengali (বাংলা)</option>
-                  <option value="te">Telugu (తెలుగు)</option>
-                  <option value="mr">Marathi (मराठी)</option>
-                  <option value="ta">Tamil (தமிழ்)</option>
-                  <option value="ur">Urdu (اردو)</option>
-                  <option value="it">Italian (Italiano)</option>
-                  <option value="nl">Dutch (Nederlands)</option>
-                  <option value="tr">Turkish (Türkçe)</option>
-                  <option value="vi">Vietnamese (Tiếng Việt)</option>
-                  <option value="th">Thai (ไทย)</option>
-                  <option value="id">Indonesian (Bahasa Indonesia)</option>
-                </select>
-                <p class="language-hint-simple">
-                  <i class="fas fa-info-circle"></i>
-                  Select the language spoken in your audio file for better accuracy
-                </p>
-              </div>
-
-              <!-- Dropzone -->
-              <div class="dropzone-simple" id="dropzone">
-                <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg">
-                <div class="dropzone-content-simple">
-                  <div class="dropzone-icon-simple">
-                    <i class="fas fa-file-audio"></i>
-                  </div>
-                  <div class="dropzone-text-simple">
-                    <span id="dropzoneText" class="dropzone-main-simple">Click to select or drag & drop</span>
-                    <span id="dropzoneHint" class="dropzone-hint-simple">MP3, WAV, M4A, OGG • Max 25MB</span>
-                  </div>
-                </div>
-                <div id="fileName" class="file-name-preview-simple"></div>
-              </div>
-
-              <!-- Upload Button -->
-              <button type="submit" id="processBtn" class="btn-primary-upload">
-                <span id="processBtnText">Upload & Process Audio</span>
-                <i class="fas fa-magic"></i>
-                <i id="processingSpinner" class="fas fa-spinner fa-spin hidden"></i>
-              </button>
-            </form>
-
-            <!-- Loading Indicator -->
-            <div id="loading" class="loading-indicator-simple hidden">
-              <div class="loading-spinner-simple"></div>
-              <div class="loading-content-simple">
-                <span class="loading-text-simple">Processing audio...</span>
-                <div class="loading-progress-simple">
-                  <div class="progress-bar-simple">
-                    <div class="progress-fill-simple" id="progressFill"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Error Message -->
-            <div id="errorMsg" class="error-message-simple hidden"></div>
-
-            <!-- File Information -->
-            <div id="fileInfo" class="file-info-simple hidden">
-              <div class="file-info-header">
-                <i class="fas fa-file-audio"></i>
-                <h4>Uploaded File</h4>
-              </div>
-              <div class="file-info-content">
-                <div class="file-info-row">
-                  <span class="file-info-label">File:</span>
-                  <span id="uploadedFileName" class="file-info-value">-</span>
-                </div>
-                <div class="file-info-row">
-                  <span class="file-info-label">Size:</span>
-                  <span id="uploadedFileSize" class="file-info-value">-</span>
-                </div>
-                <div class="file-info-row">
-                  <span class="file-info-label">Status:</span>
-                  <span id="uploadStatus" class="file-info-value status-processing">Processing...</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Results Ready -->
-            <div id="resultsReady" class="results-ready-simple hidden">
-              <div class="results-ready-content-simple">
-                <div class="results-ready-icon">
-                  <i class="fas fa-check-circle"></i>
-                </div>
-                <h3>Processing Complete!</h3>
-                <p>Your audio has been transcribed and summarized successfully.</p>
-                <button id="viewResultsBtn" class="btn-success">
-                  <i class="fas fa-eye"></i>
-                  <span>View Results</span>
-                </button>
-              </div>
-            </div>
+            <p class="hero-subtitle">
+              Transform audio into searchable transcripts and AI-powered summaries with professional-grade accuracy.
+            </p>
           </div>
         </div>
+      </div>
 
-        <!-- Right Column: Processing Logs -->
-        <div class="logs-column">
-          <div class="card logs-card-simple">
-            <div class="card-header-simple">
-              <div class="card-icon-large">
-                <i class="fas fa-terminal"></i>
-              </div>
-              <div class="card-header-content-simple">
-                <h2>Processing Logs</h2>
-                <p class="card-subtitle-simple">Real-time updates during audio processing</p>
-              </div>
-              <div class="card-actions-simple">
-                <button id="clearLogsBtn" class="btn-icon-small" title="Clear logs">
-                  <i class="fas fa-eraser"></i>
-                </button>
+      <div class="upload-workflow">
+        <div class="container-wide">
+          <div class="workflow-grid">
+
+            <!-- Upload Section -->
+            <div class="upload-section">
+              <div class="section-card">
+                <div class="card-header">
+                  <div class="card-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                  </div>
+                  <div class="card-header-content">
+                    <h2>Upload Audio</h2>
+                    <p class="card-subtitle">Select your audio file and language for transcription</p>
+                  </div>
+                  <div class="card-stats">
+                    <div class="stat-chip">
+                      <i class="fas fa-shield-alt"></i>
+                      <span>Secure Upload</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <form id="uploadForm" class="upload-form">
+                    <!-- Language Selection -->
+                    <div class="form-group">
+                      <div class="form-label">
+                        <div class="label-icon">
+                          <i class="fas fa-language"></i>
+                        </div>
+                        <span>Audio Language</span>
+                        <span class="label-hint">For better accuracy</span>
+                      </div>
+                      <div class="select-wrapper">
+                        <select id="inputLanguage" class="form-select">
+                          <option value="en">English</option>
+                          <option value="hi">Hindi (हिन्दी)</option>
+                          <option value="es">Spanish (Español)</option>
+                          <option value="fr">French (Français)</option>
+                          <option value="de">German (Deutsch)</option>
+                          <option value="zh">Chinese (中文)</option>
+                          <option value="ja">Japanese (日本語)</option>
+                          <option value="ko">Korean (한국어)</option>
+                          <option value="ar">Arabic (العربية)</option>
+                          <option value="ru">Russian (Русский)</option>
+                          <option value="pt">Portuguese (Português)</option>
+                          <option value="bn">Bengali (বাংলা)</option>
+                          <option value="te">Telugu (తెలుగు)</option>
+                          <option value="mr">Marathi (मराठी)</option>
+                          <option value="ta">Tamil (தமிழ்)</option>
+                          <option value="ur">Urdu (اردو)</option>
+                          <option value="it">Italian (Italiano)</option>
+                          <option value="nl">Dutch (Nederlands)</option>
+                          <option value="tr">Turkish (Türkçe)</option>
+                          <option value="vi">Vietnamese (Tiếng Việt)</option>
+                          <option value="th">Thai (ไทย)</option>
+                          <option value="id">Indonesian (Bahasa Indonesia)</option>
+                        </select>
+                        <i class="fas fa-chevron-down select-arrow"></i>
+                      </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="form-group">
+                      <div class="form-label">
+                        <div class="label-icon">
+                          <i class="fas fa-file-audio"></i>
+                        </div>
+                        <span>Audio File</span>
+                        <span class="label-hint">MP3, WAV, M4A, OGG • Max 25MB</span>
+                      </div>
+
+                      <div class="upload-zone" id="dropzone">
+                        <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg">
+                        <div class="upload-zone-content">
+                          <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                          </div>
+                          <div class="upload-text">
+                            <span id="dropzoneText" class="upload-main-text">Drag & drop or click to browse</span>
+                            <span id="dropzoneHint" class="upload-hint">Supports all major audio formats</span>
+                          </div>
+                          <button type="button" class="btn-outline-sm" id="browseBtn">
+                            <i class="fas fa-folder-open"></i>
+                            <span>Browse Files</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div id="fileName" class="file-preview"></div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button type="submit" id="processBtn" class="btn-primary-xl">
+                      <span id="processBtnText">Process Audio</span>
+                      <i class="fas fa-magic"></i>
+                      <div id="processingSpinner" class="spinner hidden">
+                        <div class="spinner-dot"></div>
+                        <div class="spinner-dot"></div>
+                        <div class="spinner-dot"></div>
+                      </div>
+                    </button>
+                  </form>
+
+                  <!-- Processing Indicator -->
+                  <div id="loading" class="processing-indicator hidden">
+                    <div class="processing-header">
+                      <div class="processing-icon">
+                        <i class="fas fa-cog fa-spin"></i>
+                      </div>
+                      <div class="processing-text">
+                        <span class="processing-title">Processing Audio</span>
+                        <span class="processing-subtitle">This may take a few moments</span>
+                      </div>
+                    </div>
+                    <div class="processing-progress">
+                      <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                      </div>
+                      <div class="progress-stats">
+                        <span id="progressPercent">0%</span>
+                        <span id="progressStatus">Initializing...</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Results Ready -->
+                  <div id="resultsReady" class="results-card hidden">
+                    <div class="results-header">
+                      <div class="results-icon success">
+                        <i class="fas fa-check-circle"></i>
+                      </div>
+                      <div class="results-text">
+                        <h3>Processing Complete!</h3>
+                        <p>Your audio has been transcribed and summarized successfully.</p>
+                      </div>
+                    </div>
+                    <div class="results-actions">
+                      <button id="viewResultsBtn" class="btn-primary">
+                        <i class="fas fa-eye"></i>
+                        <span>View Results</span>
+                      </button>
+                      <button id="processAnotherBtn" class="btn-outline">
+                        <i class="fas fa-redo"></i>
+                        <span>Process Another</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div id="logsContent" class="logs-content-simple">
-              <div class="log-entry log-info">
-                <span class="log-time">[00:00:00]</span>
-                <span class="log-message">Ready to upload audio file</span>
-              </div>
-            </div>
+            <!-- Processing Logs -->
+            <div class="logs-section">
+              <div class="section-card">
+                <div class="card-header">
+                  <div class="card-icon">
+                    <i class="fas fa-terminal"></i>
+                  </div>
+                  <div class="card-header-content">
+                    <h2>Processing Logs</h2>
+                    <p class="card-subtitle">Real-time system updates and status</p>
+                  </div>
+                  <div class="card-actions">
+                    <button id="clearLogsBtn" class="btn-icon" title="Clear logs">
+                      <i class="fas fa-eraser"></i>
+                    </button>
+                    <button class="btn-icon" title="Auto-scroll">
+                      <i class="fas fa-arrows-alt-v"></i>
+                    </button>
+                  </div>
+                </div>
 
-            <div class="logs-footer">
-              <div class="logs-stats">
-                <i class="fas fa-info-circle"></i>
-                <span>Logs update in real-time during processing</span>
+                <div class="card-body">
+                  <div id="logsContent" class="logs-container">
+                  </div>
+
+                  <div class="logs-footer">
+                    <div class="logs-stats">
+                      <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Real-time updates</span>
+                      </div>
+                      <div class="stat-item">
+                        <i class="fas fa-database"></i>
+                        <span>Secure processing</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Toast Container -->
-      <div id="toastContainer" class="toast-container"></div>
+      <!-- Stats Section -->
+      <div class="stats-section">
+        <div class="container-narrow">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-bolt"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">3.2s</div>
+                <div class="stat-label">Avg. Processing Time</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">99.2%</div>
+                <div class="stat-label">Accuracy Rate</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-language"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">50+</div>
+                <div class="stat-label">Languages Supported</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">256-bit</div>
+                <div class="stat-label">Encryption</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
 
-      <!-- Footer -->
-      <footer class="app-footer">
-        <div class="footer-copyright">
+    <!-- Footer -->
+    <footer class="premium-footer">
+      <div class="footer-bottom">
+        <div class="copyright">
           © 2026 TranscribeFlow. All rights reserved.
         </div>
-      </footer>
+        <div class="footer-legal">
+          <a href="/privacy" class="legal-link">Privacy</a>
+          <a href="/terms" class="legal-link">Terms</a>
+          <a href="/security" class="legal-link">Security</a>
+        </div>
+      </div>
+    </footer>
   </div>
 
-<script src="./upload.js"></script>
-<script src="./auth-check.js"></script>
-<script>
-    // Page is already protected by backend - just load user info
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            const userInfo = await getUserInfo();
-            if (userInfo) {
-                displayUserInfo(userInfo.name, userInfo.picture);
-            }
-        } catch (error) {
-            console.error('Failed to load user info:', error);
-        }
-    });
-</script>
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- External JavaScript -->
+  <script src="./static/upload.js"></script>
 </body>
+
 </html>

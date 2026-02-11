@@ -2,41 +2,45 @@ from sqlalchemy.orm import Session
 from backend import db_models, schemas
 from typing import List, Optional
 
-# =====================
+# =====================================================
 # USER OPERATIONS
-# =====================
+# =====================================================
 
-def get_user_by_auth0_id(db: Session, auth0_user_id: str) -> Optional[db_models.User]:
-    """Get user by Auth0 ID"""
-    return db.query(db_models.User).filter(db_models.User.auth0_user_id == auth0_user_id).first()
+def get_user_by_username(db: Session, username: str) -> Optional[db_models.User]:
+    """Get user by username"""
+    return db.query(db_models.User).filter(db_models.User.username == username).first()
 
 def get_user_by_email(db: Session, email: str) -> Optional[db_models.User]:
     """Get user by email"""
     return db.query(db_models.User).filter(db_models.User.email == email).first()
 
-def create_user(db: Session, user: schemas.UserCreate) -> db_models.User:
-    """Create new user"""
+def get_user_by_id(db: Session, user_id: str) -> Optional[db_models.User]:
+    """Get user by ID"""
+    return db.query(db_models.User).filter(db_models.User.id == user_id).first()
+
+def create_user(db: Session, user: schemas.UserCreate, hashed_password: str) -> db_models.User:
+    """Create new user with hashed password"""
     db_user = db_models.User(
-        auth0_user_id=user.auth0_user_id,
+        username=user.username,
         email=user.email,
-        name=user.name,
-        picture=user.picture
+        hashed_password=hashed_password,
+        name=user.name or user.username
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
-def update_user_stats(db: Session, user_id: str, file_count_delta: int = 1, minutes_delta: float = 0.0):
-    """Update user statistics"""
-    user = db.query(db_models.User).filter(db_models.User.id == user_id).first()
-    if user:
-        user.total_files += file_count_delta
-        user.total_minutes += minutes_delta
-        db.commit()
-        db.refresh(user)
+def authenticate_user(db: Session, username: str, password: str):
+    """Authenticate user with username and password"""
+    from backend.security import verify_password
+    
+    user = get_user_by_username(db, username)
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
     return user
-
 
 # =====================
 # FILE OPERATIONS
@@ -94,3 +98,45 @@ def get_user_file_count(db: Session, user_id: str) -> int:
         db_models.File.user_id == user_id,
         db_models.File.is_deleted == False
     ).count()
+
+def star_file(db: Session, file_id: str, user_id: str, starred: bool) -> bool:
+    """Star/unstar a file"""
+    file = get_file_by_id(db, file_id, user_id)
+    if file:
+        file.is_starred = starred
+        db.commit()
+        return True
+    return False
+
+def pin_file(db: Session, file_id: str, user_id: str, pinned: bool) -> bool:
+    """Pin/unpin a file"""
+    file = get_file_by_id(db, file_id, user_id)
+    if file:
+        file.is_pinned = pinned
+        db.commit()
+        return True
+    return False
+
+def get_starred_files(db: Session, user_id: str) -> List[db_models.File]:
+    """Get all starred files"""
+    return db.query(db_models.File).filter(
+        db_models.File.user_id == user_id,
+        db_models.File.is_starred == True,
+        db_models.File.is_deleted == False
+    ).order_by(db_models.File.created_at.desc()).all()
+    
+def delete_file(db: Session, file_id: str, user_id: str) -> bool:
+    """Soft delete a file"""
+    file = db.query(db_models.File).filter(
+        db_models.File.id == file_id,
+        db_models.File.user_id == user_id,
+        db_models.File.is_deleted == False
+    ).first()
+    
+    if not file:
+        return False
+    
+    file.is_deleted = True
+    db.commit()
+    
+    return True
