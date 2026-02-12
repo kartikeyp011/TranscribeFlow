@@ -253,7 +253,7 @@ async def upload_audio(
     file: UploadFile = File(...),
     language: str = Form("auto"),
     summary_mode: str = Form("bullet"),
-    enable_diarization: bool = Form(False),
+    enable_diarization: str = Form("false"),
     num_speakers: Optional[int] = Form(None),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
@@ -273,16 +273,23 @@ async def upload_audio(
     with open(path, "wb") as f:
         f.write(content)
 
+    # Parse diarization flag from string
+    diarization_enabled = enable_diarization.lower() in ('true', '1', 'yes', 'on')
+    logger.info(f"🔧 Diarization enabled: {diarization_enabled} (raw value: '{enable_diarization}')")
+
     # Transcribe
     transcript_result = await run_in_threadpool(pipeline.transcribe, path, language)
     transcript_text = transcript_result["text"]
     word_timestamps = transcript_result["words"]
+    transcript_segments = transcript_result.get("segments", [])
+    
+    logger.info(f"📊 Transcription data: {len(word_timestamps)} words, {len(transcript_segments)} segments, {len(transcript_text)} chars")
     
     # Speaker diarization (optional)
     speaker_segments = []
     formatted_transcript = transcript_text  # Default to plain transcript
     
-    if enable_diarization:
+    if diarization_enabled:
         try:
             logger.info("🎤 Running speaker diarization...")
             logger.info(f"📂 Audio file: {path}")
@@ -298,18 +305,18 @@ async def upload_audio(
             # Log what we got back
             logger.info(f"🔍 Diarization returned {len(speaker_segments) if speaker_segments else 0} segments")
             
-            # ✅ Merge diarization with transcript
+            # Merge diarization with transcript
             if speaker_segments and len(speaker_segments) > 0:
-                logger.info(f"📊 Processing {len(speaker_segments)} speaker segments...")
-                
                 # Count unique speakers
                 unique_speakers = len(set([s['speaker'] for s in speaker_segments]))
                 logger.info(f"👤 Found {unique_speakers} unique speakers")
                 
-                # Merge with word timestamps
+                # Merge with all available transcript data
                 speaker_transcript = pipeline.merge_diarization_with_transcript(
                     word_timestamps,
-                    speaker_segments
+                    speaker_segments,
+                    transcript_segments=transcript_segments,
+                    full_text=transcript_text
                 )
                 
                 logger.info(f"📝 Created {len(speaker_transcript)} speaker turns")
@@ -367,7 +374,7 @@ async def batch_upload_audio(
     files: List[UploadFile] = File(...),
     language: str = Form("auto"),
     summary_mode: str = Form("bullet"),
-    enable_diarization: bool = Form(False),
+    enable_diarization: str = Form("false"),
     num_speakers: Optional[int] = Form(None),
     background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db),
@@ -411,6 +418,9 @@ async def batch_upload_audio(
         with open(save_path, "wb") as f:
             f.write(content)
         
+        # Parse diarization flag from string
+        diarization_enabled = enable_diarization.lower() in ('true', '1', 'yes', 'on') if isinstance(enable_diarization, str) else bool(enable_diarization)
+        
         # Process in background
         background_tasks.add_task(
             process_audio_file,
@@ -421,7 +431,7 @@ async def batch_upload_audio(
             summary_mode,
             current_user.id,
             len(content),
-            enable_diarization,
+            diarization_enabled,
             num_speakers
         )
         
@@ -446,11 +456,15 @@ async def process_audio_file(
     summary_mode: str,
     user_id: str,
     file_size: int,
-    enable_diarization: bool = False,
+    enable_diarization = False,
     num_speakers: Optional[int] = None
 ):
     """Background task to process audio file"""
     from backend.database import SessionLocal
+    
+    # Ensure enable_diarization is a boolean
+    if isinstance(enable_diarization, str):
+        enable_diarization = enable_diarization.lower() in ('true', '1', 'yes', 'on')
     
     db = SessionLocal()
     try:
@@ -460,6 +474,7 @@ async def process_audio_file(
         transcript_result = pipeline.transcribe(save_path, language)
         transcript_text = transcript_result["text"]
         word_timestamps = transcript_result["words"]
+        transcript_segments = transcript_result.get("segments", [])
         
         # Speaker diarization (optional)
         speaker_segments = []
@@ -467,13 +482,14 @@ async def process_audio_file(
         
         if enable_diarization:
             try:
-                # ✅ FIXED: Changed to diarize_speakers
                 speaker_segments = pipeline.diarize_speakers(save_path, num_speakers)
                 
                 if speaker_segments:
                     speaker_transcript = pipeline.merge_diarization_with_transcript(
                         word_timestamps,
-                        speaker_segments
+                        speaker_segments,
+                        transcript_segments=transcript_segments,
+                        full_text=transcript_text
                     )
                     formatted_transcript = pipeline.format_transcript_with_speakers(speaker_transcript)
                     

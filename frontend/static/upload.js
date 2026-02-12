@@ -118,6 +118,7 @@ class UploadPage {
             
             enableDiarization: document.getElementById('enableDiarization'),
             numSpeakers: document.getElementById('numSpeakers'),
+            diarizationOptions: document.getElementById('diarizationOptions'),
             
             fileHistory: document.getElementById('fileHistory') || 
                         document.querySelector('.file-history-list') ||
@@ -172,6 +173,24 @@ class UploadPage {
 
         if (this.elements.clearAllBtn) {
             this.elements.clearAllBtn.addEventListener('click', () => this.clearAll());
+        }
+
+        // Diarization toggle - show/hide options panel
+        if (this.elements.enableDiarization) {
+            this.elements.enableDiarization.addEventListener('change', () => {
+                const optionsPanel = this.elements.diarizationOptions;
+                if (optionsPanel) {
+                    if (this.elements.enableDiarization.checked) {
+                        optionsPanel.classList.remove('hidden');
+                    } else {
+                        optionsPanel.classList.add('hidden');
+                        // Reset speaker count when disabled
+                        if (this.elements.numSpeakers) {
+                            this.elements.numSpeakers.value = '';
+                        }
+                    }
+                }
+            });
         }
 
         if (this.elements.mobileMenuBtn && this.elements.navActions) {

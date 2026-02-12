@@ -105,6 +105,11 @@ class ResultsPage {
             copySummary: document.getElementById('copySummary'),
             exportSummaryTxt: document.getElementById('exportSummaryTxt'),
 
+            // Progress fill for visual feedback
+            progressFill: document.getElementById('progressFill'),
+            volumeFill: document.getElementById('volumeFill'),
+            speedDisplay: document.getElementById('speedDisplay'),
+
             // Toast
             toastContainer: document.getElementById('toastContainer')
         };
@@ -231,6 +236,17 @@ class ResultsPage {
 
         if (this.elements.exportSummaryTxt) {
             this.elements.exportSummaryTxt.addEventListener('click', () => this.exportText('summary'));
+        }
+
+        // File Info Buttons
+        const copyFileInfoBtn = document.getElementById('copyFileInfoBtn');
+        if (copyFileInfoBtn) {
+            copyFileInfoBtn.addEventListener('click', () => this.copyFileInfo());
+        }
+
+        const exportFileInfoBtn = document.getElementById('exportFileInfoBtn');
+        if (exportFileInfoBtn) {
+            exportFileInfoBtn.addEventListener('click', () => this.exportFileInfo());
         }
     }
 
@@ -388,6 +404,36 @@ class ResultsPage {
         }
     }
 
+    getFileInfoText() {
+        const name = this.elements.fileInfoName?.textContent || 'Unknown';
+        const size = this.elements.fileInfoSize?.textContent || 'Unknown';
+        const time = this.elements.fileInfoTime?.textContent || 'Unknown';
+        const lang = this.elements.fileInfoLanguage?.textContent || 'Unknown';
+        return `File Name: ${name}\nFile Size: ${size}\nProcessed: ${time}\nLanguage: ${lang}`;
+    }
+
+    copyFileInfo() {
+        const text = this.getFileInfoText();
+        navigator.clipboard.writeText(text).then(() => {
+            this.showToast('File info copied to clipboard!', 'success');
+        }).catch(() => {
+            this.showToast('Failed to copy file info', 'error');
+        });
+    }
+
+    exportFileInfo() {
+        const text = this.getFileInfoText();
+        const filename = (this.currentData?.filename || 'file-info').replace(/\.[^.]+$/, '') + '_info.txt';
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showToast('File info exported!', 'success');
+    }
+
     displayTranscript() {
         if (!this.currentData || !this.elements.transcript) return;
 
@@ -523,6 +569,10 @@ class ResultsPage {
         const progress = (this.audioPlayer.currentTime / this.audioPlayer.duration) * 100;
         this.elements.progressBar.value = progress || 0;
 
+        if (this.elements.progressFill) {
+            this.elements.progressFill.style.width = `${progress || 0}%`;
+        }
+
         if (this.elements.currentTime) {
             this.elements.currentTime.textContent = this.formatTime(this.audioPlayer.currentTime);
         }
@@ -544,7 +594,12 @@ class ResultsPage {
     changeVolume(e) {
         if (!this.audioPlayer) return;
 
-        this.audioPlayer.volume = e.target.value / 100;
+        const value = e.target.value;
+        this.audioPlayer.volume = value / 100;
+
+        if (this.elements.volumeFill) {
+            this.elements.volumeFill.style.width = `${value}%`;
+        }
     }
 
     cycleSpeed() {
@@ -557,7 +612,9 @@ class ResultsPage {
             this.audioPlayer.playbackRate = this.playbackSpeed;
         }
 
-        if (this.elements.speedControl) {
+        if (this.elements.speedDisplay) {
+            this.elements.speedDisplay.textContent = `${this.playbackSpeed}x`;
+        } else if (this.elements.speedControl) {
             this.elements.speedControl.querySelector('span').textContent = `${this.playbackSpeed}x`;
         }
 

@@ -36,3 +36,6 @@ others/
 
 #Random FIles
 create_tables.pysample/
+
+#Diaritization Models
+models--pyannote--*

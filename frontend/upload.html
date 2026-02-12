@@ -163,6 +163,51 @@
                       <div id="fileName" class="file-preview"></div>
                     </div>
 
+                    <!-- Speaker Diarization Option -->
+                    <div class="form-group">
+                      <div class="diarization-toggle">
+                        <label class="toggle-switch" for="enableDiarization">
+                          <input type="checkbox" id="enableDiarization">
+                          <span class="toggle-slider"></span>
+                        </label>
+                        <div class="toggle-label-content">
+                          <div class="toggle-label-row">
+                            <div class="label-icon">
+                              <i class="fas fa-users"></i>
+                            </div>
+                            <span>Speaker Diarization</span>
+                            <span class="label-hint label-badge">Optional</span>
+                          </div>
+                          <span class="toggle-description">Identify and label different speakers in the audio</span>
+                        </div>
+                      </div>
+
+                      <div id="diarizationOptions" class="diarization-options hidden">
+                        <div class="diarization-option-row">
+                          <div class="option-label">
+                            <i class="fas fa-hashtag"></i>
+                            <span>Number of Speakers</span>
+                          </div>
+                          <div class="option-input-wrapper">
+                            <select id="numSpeakers" class="form-select form-select-sm">
+                              <option value="">Auto-detect</option>
+                              <option value="2">2 speakers</option>
+                              <option value="3">3 speakers</option>
+                              <option value="4">4 speakers</option>
+                              <option value="5">5 speakers</option>
+                              <option value="6">6 speakers</option>
+                            </select>
+                            <i class="fas fa-chevron-down select-arrow"></i>
+                          </div>
+                        </div>
+                        <div class="diarization-note">
+                          <i class="fas fa-info-circle"></i>
+                          <span>Diarization adds processing time. Works best with clear audio and distinct
+                            speakers.</span>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- Action Button -->
                     <button type="submit" id="processBtn" class="btn-primary-xl">
                       <span id="processBtnText">Process Audio</span>
@@ -276,7 +321,7 @@
                 <i class="fas fa-bolt"></i>
               </div>
               <div class="stat-content">
-                <div class="stat-value">3.2s</div>
+                <div class="stat-value">5s</div>
                 <div class="stat-label">Avg. Processing Time</div>
               </div>
             </div>
@@ -285,7 +330,7 @@
                 <i class="fas fa-chart-line"></i>
               </div>
               <div class="stat-content">
-                <div class="stat-value">99.2%</div>
+                <div class="stat-value">99%</div>
                 <div class="stat-label">Accuracy Rate</div>
               </div>
             </div>
@@ -294,11 +339,11 @@
                 <i class="fas fa-language"></i>
               </div>
               <div class="stat-content">
-                <div class="stat-value">50+</div>
+                <div class="stat-value">22</div>
                 <div class="stat-label">Languages Supported</div>
               </div>
             </div>
-            <div class="stat-card">
+            <!-- <div class="stat-card">
               <div class="stat-icon">
                 <i class="fas fa-shield-alt"></i>
               </div>
@@ -306,7 +351,7 @@
                 <div class="stat-value">256-bit</div>
                 <div class="stat-label">Encryption</div>
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
@@ -331,7 +376,7 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- External JavaScript -->
-  <script src="./static/upload.js"></script>
+  <script src="static/upload.js"></script>
 </body>
 
 </html>

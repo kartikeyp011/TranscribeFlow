@@ -53,7 +53,8 @@ class TranscribeFlowPipeline:
                         file=f,
                         model="whisper-large-v3-turbo",
                         language=language,
-                        response_format="verbose_json",  # ✅ Changed to get timestamps
+                        response_format="verbose_json",
+                        timestamp_granularities=["word", "segment"],
                         temperature=0
                     )
             
@@ -68,7 +69,8 @@ class TranscribeFlowPipeline:
                             file=f,
                             model="whisper-large-v3-turbo",
                             language=language,
-                            response_format="verbose_json",  # ✅ Changed
+                            response_format="verbose_json",
+                            timestamp_granularities=["word", "segment"],
                             temperature=0
                         )
                 finally:
@@ -76,21 +78,32 @@ class TranscribeFlowPipeline:
             else:
                 raise TypeError("Unsupported audio format")
 
-            # ✅ NEW: Extract text and word-level timestamps
+            # Extract text and word-level timestamps
             text = result.text.strip()
             words = []
             if hasattr(result, 'words') and result.words:
                 for word in result.words:
                     words.append({
-                        "word": word.word,
-                        "start": word.start,
-                        "end": word.end
+                        "word": word.get('word', '') if isinstance(word, dict) else getattr(word, 'word', ''),
+                        "start": word.get('start', 0) if isinstance(word, dict) else getattr(word, 'start', 0),
+                        "end": word.get('end', 0) if isinstance(word, dict) else getattr(word, 'end', 0),
                     })
             
-            logger.info("✅ Transcription complete with timestamps")
+            # Also extract segment-level timestamps as fallback
+            segments = []
+            if hasattr(result, 'segments') and result.segments:
+                for seg in result.segments:
+                    segments.append({
+                        "text": seg.get('text', '') if isinstance(seg, dict) else getattr(seg, 'text', ''),
+                        "start": seg.get('start', 0) if isinstance(seg, dict) else getattr(seg, 'start', 0),
+                        "end": seg.get('end', 0) if isinstance(seg, dict) else getattr(seg, 'end', 0),
+                    })
+            
+            logger.info(f"✅ Transcription complete — {len(words)} words, {len(segments)} segments")
             return {
                 "text": text,
-                "words": words
+                "words": words,
+                "segments": segments
             }
         
         except Exception as e:
@@ -450,7 +463,8 @@ Text:
                 waveform = torch.mean(waveform, dim=0, keepdim=True)
             
             # Save preprocessed audio to temp file
-            temp_audio = audio_path.replace('.mp3', '_preprocessed.wav')
+            base, ext = os.path.splitext(audio_path)
+            temp_audio = f"{base}_preprocessed.wav"
             torchaudio.save(temp_audio, waveform, sample_rate)
             
             logger.info("✅ Audio preprocessed for diarization")
@@ -464,14 +478,26 @@ Text:
             # Run diarization on preprocessed audio
             if num_speakers:
                 logger.info(f"🎯 Running diarization with {num_speakers} speakers...")
-                diarization = diarization_pipeline(temp_audio, num_speakers=num_speakers)
+                diarization_output = diarization_pipeline(temp_audio, num_speakers=num_speakers)
             else:
                 logger.info("🎯 Running diarization (auto-detect speakers)...")
-                diarization = diarization_pipeline(temp_audio)
+                diarization_output = diarization_pipeline(temp_audio)
             
-            # Extract speaker segments
+            # Handle different return types from pyannote versions
+            # pyannote 3.1+ returns DiarizeOutput dataclass, older versions return Annotation
+            if hasattr(diarization_output, 'speaker_diarization'):
+                # New pyannote 3.1+ DiarizeOutput dataclass
+                logger.info("📦 Extracting annotation from DiarizeOutput...")
+                annotation = diarization_output.speaker_diarization
+            elif hasattr(diarization_output, 'itertracks'):
+                # Legacy: direct Annotation object
+                annotation = diarization_output
+            else:
+                raise TypeError(f"Unexpected diarization output type: {type(diarization_output)}")
+            
+            # Extract speaker segments from the Annotation
             segments = []
-            for turn, _, speaker in diarization.itertracks(yield_label=True):
+            for turn, _, speaker in annotation.itertracks(yield_label=True):
                 segments.append({
                     "speaker": speaker,
                     "start": round(turn.start, 2),
@@ -495,58 +521,176 @@ Text:
             logger.error(traceback.format_exc())
             return []
         
-    def merge_diarization_with_transcript(self, transcript_words, speaker_segments):
+    def merge_diarization_with_transcript(self, transcript_words, speaker_segments, transcript_segments=None, full_text=""):
         """
-        Merge speaker diarization with word-level transcript
-        Returns formatted transcript with speaker labels
+        Merge speaker diarization with transcript.
+        Supports word-level, segment-level, or raw text fallback.
+        
+        Args:
+            transcript_words: list of {word, start, end} from Whisper (may be empty)
+            speaker_segments: list of {speaker, start, end} from diarization
+            transcript_segments: list of {text, start, end} from Whisper segments (fallback)
+            full_text: raw transcript text (final fallback)
         """
         if not speaker_segments:
-            return transcript_words
+            return []
         
-        # Parse speaker segments
         import json
         if isinstance(speaker_segments, str):
             speaker_segments = json.loads(speaker_segments)
         
+        # Strategy 1: Word-level timestamps (most precise)
+        if transcript_words and len(transcript_words) > 0:
+            logger.info(f"📝 Merging using {len(transcript_words)} word-level timestamps")
+            return self._merge_with_words(transcript_words, speaker_segments)
+        
+        # Strategy 2: Segment-level timestamps (good fallback)
+        if transcript_segments and len(transcript_segments) > 0:
+            logger.info(f"📝 Merging using {len(transcript_segments)} segment-level timestamps")
+            return self._merge_with_segments(transcript_segments, speaker_segments)
+        
+        # Strategy 3: Raw text splitting (last resort)
+        if full_text:
+            logger.info("📝 Merging using raw text splitting (no timestamps available)")
+            return self._merge_with_text(full_text, speaker_segments)
+        
+        logger.warning("⚠️ No transcript data available for merge")
+        return []
+    
+    def _merge_with_words(self, transcript_words, speaker_segments):
+        """Merge using word-level timestamps (most precise)."""
         # Assign speakers to words based on timestamps
         for word in transcript_words:
             word_start = word.get('start', 0)
             word_end = word.get('end', 0)
+            word_mid = (word_start + word_end) / 2
             
             # Find which speaker is talking during this word
             for segment in speaker_segments:
                 seg_start = segment.get('start', 0)
                 seg_end = segment.get('end', 0)
                 
-                # Check if word overlaps with speaker segment
-                if seg_start <= word_start <= seg_end or seg_start <= word_end <= seg_end:
+                if seg_start <= word_mid <= seg_end:
                     word['speaker'] = segment.get('speaker', 'UNKNOWN')
                     break
         
-        # Format transcript with speaker labels
+        return self._group_by_speaker(transcript_words, key='word')
+    
+    def _merge_with_segments(self, transcript_segments, speaker_segments):
+        """Merge using segment-level timestamps."""
+        result_words = []
+        for seg in transcript_segments:
+            seg_start = seg.get('start', 0)
+            seg_end = seg.get('end', 0)
+            seg_mid = (seg_start + seg_end) / 2
+            text = seg.get('text', '').strip()
+            
+            if not text:
+                continue
+            
+            # Find the speaker for this segment
+            assigned_speaker = 'UNKNOWN'
+            best_overlap = 0
+            
+            for sp_seg in speaker_segments:
+                sp_start = sp_seg.get('start', 0)
+                sp_end = sp_seg.get('end', 0)
+                
+                # Calculate overlap
+                overlap_start = max(seg_start, sp_start)
+                overlap_end = min(seg_end, sp_end)
+                overlap = max(0, overlap_end - overlap_start)
+                
+                if overlap > best_overlap:
+                    best_overlap = overlap
+                    assigned_speaker = sp_seg.get('speaker', 'UNKNOWN')
+            
+            result_words.append({
+                'word': text,
+                'speaker': assigned_speaker,
+                'start': seg_start,
+                'end': seg_end
+            })
+        
+        return self._group_by_speaker(result_words, key='word')
+    
+    def _merge_with_text(self, full_text, speaker_segments):
+        """Fallback: assign text proportionally to speakers by time."""
+        if not full_text.strip():
+            return []
+        
+        # Sort speaker segments by start time
+        sorted_segs = sorted(speaker_segments, key=lambda s: s.get('start', 0))
+        
+        # Calculate total duration
+        total_duration = max(s.get('end', 0) for s in sorted_segs) if sorted_segs else 1
+        
+        # Split text into sentences
+        sentences = [s.strip() for s in full_text.replace('? ', '?|').replace('. ', '.|').replace('! ', '!|').split('|') if s.strip()]
+        
+        if not sentences:
+            sentences = [full_text]
+        
+        # Assign sentences to speaker segments proportionally
+        result = []
+        current_speaker = None
+        current_text = []
+        
+        chars_per_second = len(full_text) / total_duration if total_duration > 0 else 1
+        char_position = 0
+        
+        for sentence in sentences:
+            # Estimate the time position of this sentence
+            time_pos = char_position / chars_per_second if chars_per_second > 0 else 0
+            char_position += len(sentence)
+            
+            # Find which speaker is at this time position
+            speaker = sorted_segs[0].get('speaker', 'UNKNOWN') if sorted_segs else 'UNKNOWN'
+            for seg in sorted_segs:
+                if seg.get('start', 0) <= time_pos <= seg.get('end', 0):
+                    speaker = seg.get('speaker', 'UNKNOWN')
+                    break
+            
+            if speaker != current_speaker:
+                if current_text:
+                    result.append({
+                        'speaker': current_speaker,
+                        'text': ' '.join(current_text).strip()
+                    })
+                current_speaker = speaker
+                current_text = [sentence]
+            else:
+                current_text.append(sentence)
+        
+        if current_text:
+            result.append({
+                'speaker': current_speaker,
+                'text': ' '.join(current_text).strip()
+            })
+        
+        return result
+    
+    def _group_by_speaker(self, items, key='word'):
+        """Group consecutive items by speaker into speaker turns."""
         formatted_transcript = []
         current_speaker = None
         current_text = []
         
-        for word in transcript_words:
-            speaker = word.get('speaker', 'UNKNOWN')
-            text = word.get('word', word.get('text', ''))
+        for item in items:
+            speaker = item.get('speaker', 'UNKNOWN')
+            text = item.get(key, item.get('text', ''))
             
             if speaker != current_speaker:
-                # New speaker detected
                 if current_text:
-                    # Save previous speaker's text
                     formatted_transcript.append({
                         'speaker': current_speaker,
                         'text': ' '.join(current_text).strip()
                     })
-                
                 current_speaker = speaker
                 current_text = [text]
             else:
                 current_text.append(text)
         
-        # Add last speaker's text
         if current_text:
             formatted_transcript.append({
                 'speaker': current_speaker,
