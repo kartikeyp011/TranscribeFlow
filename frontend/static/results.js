@@ -484,8 +484,27 @@ class ResultsPage {
     }
 
     formatTranscript(text) {
-        // Format transcript with paragraphs
-        return text.split('\n').filter(line => line.trim()).map(line => `<p>${line}</p>`).join('');
+        if (!text) return '';
+
+        // Clean up artifacts like leading/trailing quotes which might come from JSON serialization issues
+        let cleanText = text;
+        if (cleanText.startsWith('"') && cleanText.endsWith('"')) {
+            cleanText = cleanText.substring(1, cleanText.length - 1);
+        }
+
+        // Remove weird double quotes like "" at the start if present
+        if (cleanText.startsWith('""')) {
+            cleanText = cleanText.substring(2);
+        }
+
+        // Helper to parse markdown bold
+        const parseBold = (str) => str.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // Format transcript with paragraphs and parse bold
+        return cleanText.split('\n')
+            .filter(line => line.trim())
+            .map(line => `<p>${parseBold(line)}</p>`)
+            .join('');
     }
 
     formatSummary(text) {
