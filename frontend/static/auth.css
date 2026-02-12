@@ -1,4 +1,4 @@
-/* ===== LOGIN PAGE STYLES ===== */
+/* ===== COMMON AUTH STYLES ===== */
 @import url('./styles.css');
 
 /* Galaxy Background - Static */
@@ -327,24 +327,6 @@
     color: var(--ice-blue);
 }
 
-/* Forgot Password */
-.forgot-password-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 0.5rem;
-}
-
-.forgot-link {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.forgot-link:hover {
-    color: var(--ice-blue);
-}
-
 /* Auth Button */
 .btn-auth {
     background: var(--gradient-accent);
@@ -361,6 +343,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     width: 100%;
+    margin-top: 0.5rem;
 }
 
 .btn-auth:hover {

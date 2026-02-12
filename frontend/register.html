@@ -1,143 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - TranscribeFlow</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .btn:hover {
-            background: #5568d3;
-        }
-
-        .error {
-            color: red;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .success {
-            color: green;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .link {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .link a {
-            color: #667eea;
-            text-decoration: none;
-        }
-    </style>
+    <title>TranscribeFlow | Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="static/auth.css">
 </head>
 
 <body>
-    <div class="container">
-        <h1>🎙️ TranscribeFlow</h1>
-        <h2>Register</h2>
+    <div class="auth-page">
+        <!-- Galaxy Background Layers - Static -->
+        <div class="galaxy-nebula-1"></div>
+        <div class="galaxy-nebula-2"></div>
+        <div class="galaxy-nebula-3"></div>
+        <div class="milky-way-band"></div>
 
-        <form id="registerForm">
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="username" required>
+        <!-- Premium Navigation -->
+        <nav class="premium-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <a href="/" class="logo-link">
+                        <div class="logo-icon">
+                            <i class="fas fa-wave-square"></i>
+                        </div>
+                        <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
+                    </a>
+                </div>
+
+                <div class="nav-actions">
+                    <a href="/" class="nav-btn outline">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="/login" class="nav-btn primary">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Sign In</span>
+                    </a>
+                </div>
+
+                <button class="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
+        </nav>
 
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="email" required>
+        <!-- Auth Container -->
+        <div class="auth-container">
+            <div class="auth-card">
+                <!-- Auth Header -->
+                <div class="auth-header">
+                    <div class="auth-logo-icon">
+                        <i class="fas fa-wave-square"></i>
+                    </div>
+                    <h1 class="auth-title">Create account</h1>
+                    <p class="auth-subtitle">Start your journey with TranscribeFlow</p>
+                </div>
+
+                <!-- Auth Form -->
+                <form id="registerForm" class="auth-form">
+                    <!-- Username Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user"></i>
+                            <span>Username</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="username" class="form-input" placeholder="Choose a username"
+                                autocomplete="username" required>
+                        </div>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-envelope"></i>
+                            <span>Email</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="email" class="form-input" placeholder="Enter your email"
+                                autocomplete="email" required>
+                        </div>
+                    </div>
+
+                    <!-- Full Name Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-id-card"></i>
+                            <span>Full Name</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-id-card input-icon"></i>
+                            <input type="text" id="name" class="form-input" placeholder="Enter your full name"
+                                autocomplete="name">
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-lock"></i>
+                            <span>Password</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="password" class="form-input" placeholder="Create a password"
+                                autocomplete="new-password" minlength="6" required>
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()"
+                                title="Show/hide password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p
+                            style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; margin-left: 0.5rem;">
+                            <i class="fas fa-info-circle"></i> Minimum 6 characters
+                        </p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="registerBtn" class="btn-auth">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Sign Up</span>
+                        <div class="spinner"></div>
+                    </button>
+
+                    <!-- Messages Container -->
+                    <div id="messageContainer" class="message-container">
+                        <div id="errorMessage" class="message error" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span id="errorText"></span>
+                        </div>
+                        <div id="successMessage" class="message success" style="display: none;">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="successText"></span>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Footer -->
+                <div class="auth-footer">
+                    Already have an account?
+                    <a href="/login" class="auth-link">
+                        Sign in
+                    </a>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="name">
-            </div>
-
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" required minlength="6">
-            </div>
-
-            <button type="submit" class="btn">Register</button>
-
-            <div class="error" id="error"></div>
-            <div class="success" id="success"></div>
-        </form>
-
-        <div class="link">
-            Already have an account? <a href="/login">Login here</a>
         </div>
     </div>
 
     <script>
+        // Password visibility toggle
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.querySelector('.toggle-password i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.classList.remove('fa-eye');
+                toggleBtn.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.classList.remove('fa-eye-slash');
+                toggleBtn.classList.add('fa-eye');
+            }
+        }
+
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const navActions = document.querySelector('.nav-actions');
+
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', function () {
+                    navActions.classList.toggle('show');
+                });
+            }
+        });
+
+        // Registration form submission
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -145,11 +192,20 @@
             const email = document.getElementById('email').value;
             const name = document.getElementById('name').value;
             const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('error');
-            const successDiv = document.getElementById('success');
 
+            const registerBtn = document.getElementById('registerBtn');
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const successDiv = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+
+            // Hide previous messages
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
+
+            // Show loading state
+            registerBtn.classList.add('loading');
+            registerBtn.disabled = true;
 
             try {
                 const response = await fetch('/api/auth/register', {
@@ -161,19 +217,26 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    successDiv.textContent = 'Registration successful! Redirecting to login...';
-                    successDiv.style.display = 'block';
+                    successText.textContent = 'Registration successful! Redirecting to login...';
+                    successDiv.style.display = 'flex';
+
+                    // Clear form
+                    document.getElementById('registerForm').reset();
 
                     setTimeout(() => {
                         window.location.href = '/login';
                     }, 2000);
                 } else {
-                    errorDiv.textContent = data.detail || 'Registration failed';
-                    errorDiv.style.display = 'block';
+                    errorText.textContent = data.detail || 'Registration failed. Please try again.';
+                    errorDiv.style.display = 'flex';
                 }
             } catch (error) {
-                errorDiv.textContent = 'Network error. Please try again.';
-                errorDiv.style.display = 'block';
+                errorText.textContent = 'Network error. Please check your connection and try again.';
+                errorDiv.style.display = 'flex';
+            } finally {
+                // Remove loading state
+                registerBtn.classList.remove('loading');
+                registerBtn.disabled = false;
             }
         });
     </script>
