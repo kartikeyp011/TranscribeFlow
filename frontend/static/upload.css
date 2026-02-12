@@ -254,6 +254,113 @@
   box-shadow: var(--shadow-lg), var(--glow-sm);
 }
 
+/* === Compact Upload Card Overrides === */
+.section-card .card-header {
+  padding: 0.75rem 1rem;
+  min-height: auto;
+}
+
+.section-card .card-header .card-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+}
+
+.section-card .card-header .card-header-content h2 {
+  font-size: 1.1rem;
+}
+
+.section-card .card-body {
+  padding: 0.75rem 1rem;
+}
+
+.section-card .upload-form {
+  gap: 0.75rem;
+}
+
+.section-card .form-group {
+  gap: 0.375rem;
+  margin-bottom: 0;
+}
+
+.section-card .form-label {
+  gap: 0.5rem;
+}
+
+.section-card .label-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+.section-card .form-select {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.section-card .upload-zone {
+  padding: 1.25rem 1rem;
+}
+
+.section-card .upload-icon {
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  border-radius: 10px;
+}
+
+.section-card .upload-zone-content {
+  gap: 0.5rem;
+}
+
+.section-card .upload-main-text {
+  font-size: 0.95rem;
+}
+
+.section-card .upload-hint {
+  font-size: 0.8rem;
+}
+
+.section-card .btn-outline-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.section-card .file-preview {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.section-card .diarization-toggle {
+  gap: 0.5rem;
+}
+
+.section-card .toggle-description {
+  font-size: 0.75rem;
+}
+
+.section-card .diarization-options {
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.section-card .diarization-note {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.section-card .diarization-note i {
+  font-size: 0.7rem;
+}
+
+.section-card .btn-primary-xl {
+  padding: 0.625rem 1.5rem;
+  font-size: 0.95rem;
+}
+
 .card-header {
   background: var(--bg-secondary);
   padding: 1.25rem;

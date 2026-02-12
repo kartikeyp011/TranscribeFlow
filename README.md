@@ -4,63 +4,64 @@
 
 TranscribeFlow is a modern, full-stack web application designed to transform audio content into actionable intelligence. It goes beyond simple transcription by offering speaker diarization, AI-powered summarization, multi-language translation, and smart search capabilities—all wrapped in a beautiful, responsive "Space/Galaxy" themed interface.
 
-![Project Status](https://img.shields.io/badge/Status-Active_Development-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Project Status](https://img.shields.io/badge/Status-Active_Development-blue?style=for-the-badge&logo=github)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge&logo=open-source-initiative)
 ![Python](https://img.shields.io/badge/Python-3.10+-yellow?style=for-the-badge&logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi)
+![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=for-the-badge&logo=mysql)
 
 ---
 
 ## ✨ Key Features
 
-### 🎧 Core Processing
--   **High-Fidelity Transcription:** powered by **Faster-Whisper** for state-of-the-art accuracy.
--   **Speaker Diarization:** Automatically identifies and labels different speakers (e.g., "Speaker A", "Speaker B") using **pyannote.audio**.
--   **Smart Summarization:** Generates concise, bulleted summaries using **Groq (Llama 3.1)** with intelligent chunking for long audio files.
--   **Fallback Mechanisms:** Robust error handling with Hugging Face API fallbacks if primary services are unavailable.
+### 🎧 Core Intelligence
+-   **High-Accuracy Transcription:** Powered by **Faster-Whisper** (large-v3) for industry-leading speech recognition.
+-   **Speaker Diarization:** Automatically identifies "Who spoke when" using **Pyannote Audio 3.1**, distinguishing multiple speakers in conversations.
+-   **Smart Summarization:** Generates concise bullet-point summaries and key takeaways using **Groq API (Llama 3.1 8B/70B)** for lightning-fast inference.
 
-### 🌍 Global Reach
--   **Multi-Language Support:** Transcribe audio from 50+ languages.
--   **Instant Translation:** Translate transcripts into major languages (English, Hindi, Spanish, French, German, etc.) on the fly using **deep-translator**.
+### 🌍 Global Accessibility
+-   **Multi-Language Support:** Configure input language for 22 languages including English, Hindi, Spanish, French, German, Chinese, and more.
+-   **Instant Translation:** Translate transcripts and summaries into major languages on-the-fly using **Deep Translator**.
 
 ### 💻 Modern User Experience
--   **Space/Galaxy Theme:** A visually stunning, dark-mode interface with animated backgrounds and glassmorphism effects.
--   **Interactive Player:** Custom audio player synced with transcript text.
--   **Smart Search:** Real-time search to instantly find keywords within the transcript.
--   **Responsive Design:** Fully optimized for desktop, tablet, and mobile devices.
+-   **Galaxy Theme:** A premium, dark-mode interface with animated nebula backgrounds, glassmorphism cards, and smooth transitions.
+-   **Interactive Player:** Custom audio player fully synced with the transcript. Click any sentence to jump to that timestamp.
+-   **Smart Search:** Real-time search to instantly locate keywords or phrases within the transcript.
+-   **Responsive Design:** Fully optimized layout for desktop, tablet, and mobile devices.
 
-### 📂 Productivity Tools
--   **Export Options:** Download results in **PDF**, **DOCX**, or **TXT** formats.
--   **Secure Storage:** Local storage implementation for user sessions and data persistence.
+### 🛡️ Security & Reliability
+-   **User Authentication:** Secure signup/login system with JWT (JSON Web Tokens) and password hashing.
+-   **Robust Backend:** Built on FastAPI with SQLAlchemy ORM for reliable data handling.
+-   **Data Persistence:** MySQL database integration for storing user profiles, transcription history, and metadata.
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Backend
--   **Framework:** FastAPI (Python)
--   **AI Models:**
-    -   *Transcription:* Faster-Whisper
-    -   *Summarization:* Groq API (Llama 3.1 8B), Hugging Face (BART/Pegasus fallback)
-    -   *Diarization:* pyannote.audio
--   **Database:** SQLite with SQLAlchemy ORM
--   **Utilities:** Librosa (audio processing), ReportLab (PDF), Python-Docx
+-   **Framework:** FastAPI (Python 3.10+)
+-   **AI Engines:**
+    -   *Transcription:* Faster-Whisper (CTranslate2)
+    -   *Diarization:* Pyannote Audio (HuggingFace)
+    -   *Summarization:* Groq API (Llama 3.1), Hugging Face Fallback
+-   **Database:** MySQL (Production-grade RDMS) with SQLAlchemy
+-   **Authentication:** OAuth2 with Password Flow (JWT)
+-   **Utilities:** Pydub/Librosa (Audio processing), ReportLab (PDF Export)
 
 ### Frontend
--   **Core:** HTML5, CSS3, JavaScript (ES6+)
--   **Styling:** Vanilla CSS with CSS Variables (Custom Properties) for theming.
--   **Icons & Fonts:** Font Awesome 6, Google Fonts (Inter).
--   **No Frameworks:** Lightweight, performance-focused implementation without React/Vue/Angular dependencies.
+-   **Core:** HTML5, CSS3, JavaScript (ES6+ Modules)
+-   **Styling:** Vanilla CSS with Custom Properties (Variables) for theming.
+-   **Components:** Font Awesome 6 (Icons), Google Fonts (Inter).
+-   **Architecture:** No-build tooling required; runs natively in browser.
 
 ---
 
 ## 🚀 Installation & Setup
 
-Follow these steps to get TranscribeFlow running on your local machine.
-
-### Prerequisites
--   Python 3.10 or higher
--   Git
+Prerequisites:
+-   **Python 3.10+** installed.
+-   **MySQL Server** installed and running.
+-   **Git** for version control.
 
 ### 1. Clone the Repository
 ```bash
@@ -68,7 +69,7 @@ git clone https://github.com/yourusername/TranscribeFlow.git
 cd TranscribeFlow
 ```
 
-### 2. Create a Virtual Environment
+### 2. Create Virtual Environment
 ```bash
 # Windows
 python -m venv venv
@@ -83,86 +84,114 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-*Note: This may take a few minutes as it installs PyTorch and other AI libraries.*
+*Note: PyTorch and Pyannote Audio may require significant download time.*
 
-### 4. Database Setup (MySQL)
-TranscribeFlow uses MySQL for robust data persistence.
-
-1.  **Install MySQL Server:** Download and install from [mysql.com](https://dev.mysql.com/downloads/mysql/) or use Docker.
-2.  **Create Database:** Log in to your MySQL shell and run:
+### 4. Database Setup
+1.  Log in to MySQL and create the database:
     ```sql
-    CREATE DATABASE transcribeflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-    CREATE USER 'tf_user'@'localhost' IDENTIFIED BY 'your_password';
-    GRANT ALL PRIVILEGES ON transcribeflow.* TO 'tf_user'@'localhost';
-    FLUSH PRIVILEGES;
+    CREATE DATABASE transcribeflow;
     ```
+2.  Update the `.env` file with your credentials (see below).
 
 ### 5. Configure Environment Variables
-Create a `.env` file in the root directory and add your API keys and database credentials:
+Create a `.env` file in the root directory (copy from `.env.example` if available):
 
 ```ini
-# AI Service Keys
-GROQ_API_KEY=your_groq_api_key_here
-HUGGINGFACE_TOKEN=your_huggingface_token_here
-
-# Database Configuration
+# Database Config
+MYSQL_USER=root
+MYSQL_PASSWORD=your_mysql_password
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
-MYSQL_USER=tf_user
-MYSQL_PASSWORD=your_password
 MYSQL_DATABASE=transcribeflow
+
+# Security
+SECRET_KEY=your_super_secret_jwt_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# AI APIs
+GROQ_API_KEY=gsk_...
+HUGGINGFACE_TOKEN=hf_...
 ```
-*   Get a Groq API Key: [console.groq.com](https://console.groq.com)
-*   Get a Hugging Face Token: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
 ### 6. Run the Application
-Start the FastAPI server:
-
+Start the FastAPI server with hot-reload enabled:
 ```bash
 uvicorn backend.main:app --reload
 ```
 
 ### 7. Access the App
-Open your browser and navigate to:
-**[http://localhost:8000](http://localhost:8000)**
+Open your browser to: **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
 ## 📖 Usage Guide
 
-1.  **Upload:** on the home page, select or drag-and-drop an audio file (MP3, WAV, M4A).
-2.  **Configure:** Choose the audio language (or leave as Auto) and optional settings.
-3.  **Process:** Click "Process Audio". The secure backend will handle upload, transcription, and summarization.
-4.  **View Results:** Once complete, you'll be redirected to the Results dashboard.
-    -   **Listen:** Use the custom player to playback audio.
-    -   **Read:** Follow along with the interactive transcript.
-    -   **Summarize:** View AI-generated key points.
-    -   **Translate:** Use the dropdown to translate the text.
-    -   **Search:** Find specific topics instantly.
-5.  **Export:** Click the "Export" button to download your data.
+1.  **Sign Up / Login:** Create an account to access the platform.
+2.  **Upload Audio:** Drag & drop an audio file (MP3, WAV, M4A) on the dashboard.
+3.  **Configure Settings:**
+    -   Select **Audio Language**.
+    -   Toggle **Speaker Diarization** if you have multiple speakers.
+    -   Set **Number of Speakers** (optional, improves accuracy).
+4.  **Process:** Click **Process Audio**. The system uploads securely and starts the AI pipeline.
+5.  **View Results:**
+    -   **Player:** Listen to audio with waveform visualization.
+    -   **Transcript:** Read the speaker-labeled text.
+    -   **Summary:** Review AI-generated bullet points.
+    -   **Translate:** Switch language using the translation tool.
+6.  **Export:** Download results as `.txt` or `.pdf`.
 
 ---
 
 ## 🔌 API Documentation
 
-TranscribeFlow provides a comprehensive REST API. When the server is running, you can access the interactive documentation (Swagger UI) at:
-
+TranscribeFlow exposes a full REST API. Access the interactive Swagger UI at:
 **[http://localhost:8000/docs](http://localhost:8000/docs)**
 
-Key Endpoints:
--   `POST /api/upload`: Upload and process audio files.
--   `GET /api/results/{task_id}`: Retrieve transcription status and data.
--   `GET /api/export/{task_id}`: Export data in specified format.
+### Key Endpoints
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Register a new user |
+| `POST` | `/api/auth/token` | Login and get access token |
+| `POST` | `/api/upload` | Upload audio for processing |
+| `GET` | `/api/files` | List user's files |
+| `GET` | `/api/files/{id}` | Get specific file results |
+| `POST` | `/api/translate` | Translate text content |
+
+---
+
+## 📂 Project Structure
+
+```
+TranscribeFlow/
+├── backend/                # Python FastAPI Backend
+│   ├── main.py             # App entry point
+│   ├── auth.py             # Authentication logic
+│   ├── database.py         # DB connection & session
+│   ├── models.py           # AI Pipeline (Whisper/Pyannote)
+│   ├── schemas.py          # Pydantic models
+│   ├── crud.py             # Database CRUD operations
+│   └── ...
+├── frontend/               # Static Frontend Assets
+│   ├── static/             # CSS, JS, Images
+│   ├── index.html          # Landing Page
+│   ├── login.html          # Auth Pages
+│   ├── upload.html         # Dashboard/Upload
+│   └── results.html        # Results View
+├── uploads/                # Temp storage for audio files
+├── .env                    # Environment variables
+├── requirements.txt        # Python dependencies
+└── README.md               # Documentation
+```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
 1.  Fork the repository.
-2.  Create a feature branch (`git checkout -b feature/AmazingFeature`).
-3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4.  Push to the branch (`git push origin feature/AmazingFeature`).
+2.  Create your feature branch (`git checkout -b feature/NewFeature`).
+3.  Commit your changes (`git commit -m 'Add NewFeature'`).
+4.  Push to the branch (`git push origin feature/NewFeature`).
 5.  Open a Pull Request.
 
 ---
