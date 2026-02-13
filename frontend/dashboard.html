@@ -7,49 +7,20 @@
   <title>Dashboard | TranscribeFlow</title>
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="/static/sidebar.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
   <div class="app-container">
-    
-    <!-- Navigation -->
-    <nav class="premium-nav">
-      <div class="nav-container">
-        <div class="nav-brand">
-          <a href="/" class="logo-link">
-            <div class="logo-icon">
-              <i class="fas fa-wave-square"></i>
-            </div>
-            <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
-          </a>
-        </div>
-
-        <div class="nav-actions">
-          <a href="/upload" class="nav-btn primary">
-            <i class="fas fa-plus"></i>
-            <span>New Upload</span>
-          </a>
-          <div class="user-info">
-            <div class="user-avatar">
-              <i class="fas fa-user"></i>
-            </div>
-            <span class="user-name" id="currentUsername">Loading...</span>
-            <button class="nav-btn danger" onclick="logout()">
-              <i class="fas fa-sign-out-alt"></i>
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
 
     <!-- Main Content -->
     <main class="main-content dashboard-page">
-      
+
       <!-- Dashboard Header -->
       <div class="dashboard-header">
         <div class="container">
@@ -80,7 +51,7 @@
                 <div class="stat-label">Total Files</div>
               </div>
             </div>
-            
+
             <div class="stat-card">
               <div class="stat-icon green">
                 <i class="fas fa-star"></i>
@@ -90,7 +61,7 @@
                 <div class="stat-label">Starred</div>
               </div>
             </div>
-            
+
             <div class="stat-card">
               <div class="stat-icon purple">
                 <i class="fas fa-language"></i>
@@ -100,7 +71,7 @@
                 <div class="stat-label">Languages</div>
               </div>
             </div>
-            
+
             <div class="stat-card">
               <div class="stat-icon orange">
                 <i class="fas fa-hdd"></i>
@@ -122,7 +93,7 @@
               <i class="fas fa-search"></i>
               <input type="text" id="searchInput" placeholder="Search files..." />
             </div>
-            
+
             <div class="filter-buttons">
               <button class="filter-btn active" data-filter="all">
                 <i class="fas fa-list"></i>
@@ -153,7 +124,7 @@
       <!-- Files Section -->
       <div class="files-section">
         <div class="container">
-          
+
           <!-- Loading State -->
           <div id="loadingState" class="loading-state">
             <div class="spinner-large"></div>
@@ -234,6 +205,7 @@
 
   </div>
 
+  <script src="/static/sidebar.js"></script>
   <script src="/static/dashboard.js"></script>
   <script>
     // Auth check
@@ -241,32 +213,7 @@
     if (!token) {
       window.location.href = '/login';
     }
-
-    // Helper function for authenticated requests
-    async function fetchWithAuth(url, options = {}) {
-      const token = localStorage.getItem('access_token');
-      
-      const headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`
-      };
-
-      const response = await fetch(url, { ...options, headers });
-
-      if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        window.location.href = '/login';
-        return;
-      }
-
-      return response;
-    }
-
-    // Logout function
-    function logout() {
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
-    }
+    // fetchWithAuth and logout are provided by sidebar.js
   </script>
 </body>
 

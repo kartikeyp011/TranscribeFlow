@@ -14,6 +14,23 @@
 </head>
 
 <body>
+    <script>
+        // If already logged in, redirect to dashboard
+        (async () => {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                try {
+                    const res = await fetch('/api/auth/me', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        window.location.href = '/dashboard';
+                        return;
+                    }
+                } catch (e) { /* token invalid, show register */ }
+            }
+        })();
+    </script>
     <div class="auth-page">
         <!-- Galaxy Background Layers - Static -->
         <div class="galaxy-nebula-1"></div>

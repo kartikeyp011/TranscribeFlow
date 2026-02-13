@@ -6,6 +6,7 @@ class ResultsPage {
         this.searchMatches = [];
         this.currentMatchIndex = -1;
         this.playbackSpeed = 1.0;
+        this.currentSpeakingCard = null;
         this.isLooping = false;
 
         this.checkAuthentication();
@@ -94,9 +95,14 @@ class ResultsPage {
             translatedTranscriptCard: document.getElementById('translatedTranscriptCard'),
             translatedTranscript: document.getElementById('translatedTranscript'),
             closeTranslation: document.getElementById('closeTranslation'),
-            speakTranscript: document.getElementById('speakTranscript'),
             copyTranslated: document.getElementById('copyTranslated'),
             exportTranslated: document.getElementById('exportTranslated'),
+
+            // Per-card speak buttons
+            speakTranscriptCard: document.getElementById('speakTranscriptCard'),
+            speakSummaryCard: document.getElementById('speakSummaryCard'),
+            speakTranslatedTranscriptCard: document.getElementById('speakTranslatedTranscriptCard'),
+            speakTranslatedSummaryCard: document.getElementById('speakTranslatedSummaryCard'),
             copyTranslatedSummary: document.getElementById('copyTranslatedSummary'),
             exportTranslatedSummary: document.getElementById('exportTranslatedSummary'),
 
@@ -111,7 +117,10 @@ class ResultsPage {
             speedDisplay: document.getElementById('speedDisplay'),
 
             // Toast
-            toastContainer: document.getElementById('toastContainer')
+            toastContainer: document.getElementById('toastContainer'),
+
+            // Loading Overlay
+            loadingOverlay: document.getElementById('loadingOverlay')
         };
 
         this.audioPlayer = this.elements.audioPlayer;
@@ -199,9 +208,18 @@ class ResultsPage {
             this.elements.closeTranslation.addEventListener('click', () => this.hideTranslation());
         }
 
-        // Speak transcript aloud
-        if (this.elements.speakTranscript) {
-            this.elements.speakTranscript.addEventListener('click', () => this.speakText());
+        // Per-card speak buttons
+        if (this.elements.speakTranscriptCard) {
+            this.elements.speakTranscriptCard.addEventListener('click', () => this.speakCardText('transcript'));
+        }
+        if (this.elements.speakSummaryCard) {
+            this.elements.speakSummaryCard.addEventListener('click', () => this.speakCardText('summary'));
+        }
+        if (this.elements.speakTranslatedTranscriptCard) {
+            this.elements.speakTranslatedTranscriptCard.addEventListener('click', () => this.speakCardText('translatedTranscript'));
+        }
+        if (this.elements.speakTranslatedSummaryCard) {
+            this.elements.speakTranslatedSummaryCard.addEventListener('click', () => this.speakCardText('translatedSummary'));
         }
 
         // Copy/Export Translated Content
@@ -300,7 +318,30 @@ class ResultsPage {
         } catch (error) {
             console.error('❌ Error loading results:', error);
             this.showToast('Failed to load results: ' + error.message, 'error');
+
+            // Allow user to try again or see partial state
+            if (this.elements.loadingOverlay) {
+                this.elements.loadingOverlay.querySelector('.loading-text').textContent = 'Error Loading Results';
+                this.elements.loadingOverlay.querySelector('.loading-subtext').textContent = error.message;
+                // Optional: add a retry button
+            }
+        } finally {
+            // Hide loading overlay regardless of success/error (or maybe keep it on error?)
+            // For now, let's hide it on success, and maybe keep it with error message on failure
+            if (this.currentData) {
+                this.hideLoading();
+            }
         }
+    }
+
+    hideLoading() {
+        if (this.elements.loadingOverlay) {
+            this.elements.loadingOverlay.classList.remove('visible');
+            setTimeout(() => {
+                this.elements.loadingOverlay.style.display = 'none';
+            }, 300);
+        }
+
     }
 
     displayFileInfo() {
@@ -512,15 +553,23 @@ class ResultsPage {
         const parseBold = (str) => str.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
         // Pre-process: normalize garbled Unicode bullet/dash characters
-        // These appear when UTF-8 bullets (•, –, —) get encoding-corrupted
+        // Only fix known garbled patterns, do NOT strip non-ASCII broadly
         text = text
             .replace(/â€¢/g, '•')       // garbled bullet •
             .replace(/â€"/g, '—')       // garbled em-dash —
             .replace(/â€"/g, '–')       // garbled en-dash –
             .replace(/â\s*-/g, '- ')    // â- pattern (corrupted bullet)
-            .replace(/â¢/g, '•')        // another garbled bullet variant
-            .replace(/[^\x00-\x7F]+-\s/g, '- ')  // any non-ASCII char(s) followed by "- "
-            .replace(/[^\x00-\x7F]+\.\s/g, '- '); // any non-ASCII char(s) followed by ". "
+            .replace(/â¢/g, '•');       // another garbled bullet variant
+
+        // If text has no newlines, try to split on sentence boundaries
+        // This handles translated text that comes back as one block
+        if (!text.includes('\n') || text.split('\n').filter(l => l.trim()).length <= 1) {
+            // Split on sentence-ending punctuation: . ! ? and CJK period 。
+            const sentences = text.split(/(?<=[.!?。])\s+/).filter(s => s.trim());
+            if (sentences.length > 1) {
+                text = sentences.join('\n');
+            }
+        }
 
         const lines = text.split('\n').filter(line => line.trim());
         let html = '';
@@ -815,6 +864,7 @@ class ResultsPage {
             const langName = this.getLanguageName(targetLang);
             this.lastTranslatedText = result.translated;
             this.lastTranslatedLang = langName;
+            this.lastTranslatedLangCode = targetLang;
 
             if (this.elements.translatedTranscriptCard) {
                 this.elements.translatedTranscriptCard.classList.remove('hidden');
@@ -897,29 +947,108 @@ class ResultsPage {
         this.lastTranslatedLang = null;
     }
 
-    speakText() {
-        // Use translated text if available, otherwise original transcript
-        const text = this.lastTranslatedText || this.currentData?.transcription || this.currentData?.transcript || '';
-        if (!text) {
-            this.showToast('No text available to read aloud', 'error');
-            return;
-        }
+    speakCardText(cardType) {
+        // Map card types to their text sources and button elements
+        const cardConfig = {
+            transcript: {
+                getText: () => this.currentData?.transcription || this.currentData?.transcript || '',
+                btn: this.elements.speakTranscriptCard
+            },
+            summary: {
+                getText: () => this.currentData?.summary || '',
+                btn: this.elements.speakSummaryCard
+            },
+            translatedTranscript: {
+                getText: () => this.lastTranslatedText || '',
+                btn: this.elements.speakTranslatedTranscriptCard
+            },
+            translatedSummary: {
+                getText: () => this.lastTranslatedSummary || '',
+                btn: this.elements.speakTranslatedSummaryCard
+            }
+        };
 
-        if (window.speechSynthesis.speaking) {
+        const config = cardConfig[cardType];
+        if (!config) return;
+
+        // Clean markdown/bullet artifacts so they aren't spoken aloud
+        const rawText = config.getText();
+        const text = rawText
+            .replace(/\*\*(.+?)\*\*/g, '$1')   // bold **text**
+            .replace(/\*(.+?)\*/g, '$1')        // italic *text*
+            .replace(/^[\s]*[-•–—*]+\s+/gm, '') // bullet markers at line start
+            .replace(/^[\s]*\d+[.)]\s+/gm, '')  // numbered list: 1. or 1)
+            .replace(/^[\s]*[a-zA-Z][.)]\s+/gm, '') // lettered list: a. or a)
+            .replace(/#{1,6}\s+/g, '')           // markdown headings
+            .replace(/\s{2,}/g, ' ')             // collapse extra spaces
+            .trim();
+
+        // Helper to reset a button's icon and speaking state
+        const resetBtn = (btn) => {
+            if (btn) {
+                btn.classList.remove('speaking');
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-stop');
+                    icon.classList.add('fa-volume-up');
+                }
+            }
+        };
+
+        // If the same card is already speaking, stop it
+        if (this.currentSpeakingCard === cardType && window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
+            resetBtn(config.btn);
+            this.currentSpeakingCard = null;
             this.showToast('Speech stopped', 'info');
             return;
         }
+
+        // If a different card is speaking, stop it first
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            const prevConfig = cardConfig[this.currentSpeakingCard];
+            if (prevConfig) resetBtn(prevConfig.btn);
+        }
+
+        if (!text) {
+            this.showToast('No text available to read aloud', 'error');
+            this.currentSpeakingCard = null;
+            return;
+        }
+
+        // Set active state on the button
+        if (config.btn) {
+            config.btn.classList.add('speaking');
+            const icon = config.btn.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-volume-up');
+                icon.classList.add('fa-stop');
+            }
+        }
+        this.currentSpeakingCard = cardType;
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
 
+        // Set language for proper pronunciation
+        if (cardType === 'translatedTranscript' || cardType === 'translatedSummary') {
+            utterance.lang = this.lastTranslatedLangCode || 'en';
+        } else {
+            const detectedLang = this.currentData?.language || this.currentData?.source_language || 'en';
+            utterance.lang = detectedLang;
+        }
+
         utterance.onend = () => {
+            resetBtn(config.btn);
+            this.currentSpeakingCard = null;
             this.showToast('Finished reading', 'info');
         };
 
         utterance.onerror = () => {
+            resetBtn(config.btn);
+            this.currentSpeakingCard = null;
             this.showToast('Speech synthesis failed', 'error');
         };
 

@@ -2,6 +2,7 @@
 class UploadPage {
     constructor() {
         this.currentFile = null;
+        this.selectedFiles = []; // Batch file tracking
         this.isProcessing = false;
         this.ws = null;
         this.requestId = null;
@@ -10,7 +11,7 @@ class UploadPage {
         this.isNavHidden = false;
 
         this.checkAuthentication();
-        
+
         this.initializeElements();
         this.setupEventListeners();
         this.setupNavigationScroll();
@@ -23,7 +24,7 @@ class UploadPage {
         console.log('🔐 Checking authentication...');
         const token = localStorage.getItem('access_token');
         console.log('Token found:', token ? 'YES' : 'NO');
-        
+
         if (!token) {
             console.log('❌ No token found, redirecting to login...');
             window.location.href = '/login';
@@ -70,8 +71,8 @@ class UploadPage {
 
             if (response.ok) {
                 const user = await response.json();
-                const usernameElement = document.getElementById('currentUsername') || 
-                                       document.querySelector('.user-name');
+                const usernameElement = document.getElementById('currentUsername') ||
+                    document.querySelector('.user-name');
 
                 if (usernameElement) {
                     usernameElement.textContent = user.username || user.name || 'User';
@@ -115,14 +116,22 @@ class UploadPage {
             navbar: document.getElementById('mainNav'),
             mobileMenuBtn: document.getElementById('mobileMenuBtn'),
             navActions: document.querySelector('.nav-actions'),
-            
+
             enableDiarization: document.getElementById('enableDiarization'),
             numSpeakers: document.getElementById('numSpeakers'),
             diarizationOptions: document.getElementById('diarizationOptions'),
-            
-            fileHistory: document.getElementById('fileHistory') || 
-                        document.querySelector('.file-history-list') ||
-                        document.querySelector('.files-list')
+
+            // Batch elements
+            batchFileList: document.getElementById('batchFileList'),
+            batchResultsReady: document.getElementById('batchResultsReady'),
+            batchResultsSummary: document.getElementById('batchResultsSummary'),
+            batchResultsList: document.getElementById('batchResultsList'),
+            batchDashboardBtn: document.getElementById('batchDashboardBtn'),
+            batchAnotherBtn: document.getElementById('batchAnotherBtn'),
+
+            fileHistory: document.getElementById('fileHistory') ||
+                document.querySelector('.file-history-list') ||
+                document.querySelector('.files-list')
         };
 
         if (this.elements.fileNameDisplay) {
@@ -206,6 +215,17 @@ class UploadPage {
                 }
             });
         }
+
+        // Batch action buttons
+        if (this.elements.batchDashboardBtn) {
+            this.elements.batchDashboardBtn.addEventListener('click', () => {
+                window.location.href = '/dashboard';
+            });
+        }
+
+        if (this.elements.batchAnotherBtn) {
+            this.elements.batchAnotherBtn.addEventListener('click', () => this.processAnother());
+        }
     }
 
     setupNavigationScroll() {
@@ -233,28 +253,56 @@ class UploadPage {
     }
 
     handleFileSelect(e) {
-        const file = e.target.files[0];
-        console.log('📁 File selected:', file ? file.name : 'none');
-        
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        console.log('📁 Files selected:', files.length);
 
-        if (!this.validateFile(file)) {
-            this.showToast('Invalid file type. Please select MP3, WAV, M4A, or OGG file.', 'error');
+        if (!files.length) return;
+
+        // Validate each file
+        const validFiles = [];
+        for (const file of files) {
+            if (!this.validateFile(file)) {
+                this.showToast(`Invalid file: ${file.name}. Skipped.`, 'warning');
+                continue;
+            }
+            validFiles.push(file);
+        }
+
+        if (validFiles.length === 0) {
+            this.showToast('No valid files selected.', 'error');
             this.resetFileSelection();
             return;
         }
 
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-        const displayName = file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name;
+        if (validFiles.length > 10) {
+            this.showToast('Maximum 10 files per batch. Only first 10 will be used.', 'warning');
+            validFiles.splice(10);
+        }
 
-        this.elements.fileNameDisplay.textContent = `${displayName} • ${sizeMB} MB`;
-        this.elements.fileNameDisplay.style.display = 'flex';
+        this.selectedFiles = validFiles;
 
-        this.elements.dropzoneText.textContent = "File selected ✓";
-        this.elements.dropzoneHint.textContent = "Click to change file";
-
-        this.addLog(`📁 Selected: ${file.name} (${sizeMB} MB)`, 'info');
-        this.showToast('File selected successfully', 'success');
+        if (validFiles.length === 1) {
+            // Single file mode
+            const file = validFiles[0];
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            const displayName = file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name;
+            this.elements.fileNameDisplay.textContent = `${displayName} • ${sizeMB} MB`;
+            this.elements.fileNameDisplay.style.display = 'flex';
+            this.elements.dropzoneText.textContent = "File selected ✓";
+            this.elements.dropzoneHint.textContent = "Click to change file";
+            this.hideBatchFileList();
+            this.addLog(`📁 Selected: ${file.name} (${sizeMB} MB)`, 'info');
+            this.showToast('File selected successfully', 'success');
+        } else {
+            // Batch mode
+            this.elements.fileNameDisplay.style.display = 'none';
+            this.elements.dropzoneText.textContent = `${validFiles.length} files selected ✓`;
+            this.elements.dropzoneHint.textContent = "Click to change files";
+            this.renderBatchFileList();
+            const totalSize = validFiles.reduce((sum, f) => sum + f.size, 0);
+            this.addLog(`📁 Batch: ${validFiles.length} files (${(totalSize / (1024 * 1024)).toFixed(1)} MB total)`, 'info');
+            this.showToast(`${validFiles.length} files selected`, 'success');
+        }
     }
 
     handleDragOver(e) {
@@ -309,27 +357,115 @@ class UploadPage {
         if (this.elements.dropzoneHint) {
             this.elements.dropzoneHint.textContent = "Supports all major audio formats";
         }
+        this.selectedFiles = [];
+        this.hideBatchFileList();
+    }
+
+    // ==========================================
+    // Batch File List Display
+    // ==========================================
+
+    renderBatchFileList() {
+        if (!this.elements.batchFileList) return;
+
+        this.elements.batchFileList.classList.remove('hidden');
+        this.elements.batchFileList.innerHTML = this.selectedFiles.map((file, idx) => {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            const ext = file.name.split('.').pop().toUpperCase();
+            return `
+                <div class="batch-file-item" data-index="${idx}">
+                    <div class="batch-file-info">
+                        <div class="batch-file-icon">
+                            <i class="fas fa-file-audio"></i>
+                        </div>
+                        <div class="batch-file-details">
+                            <span class="batch-file-name">${file.name}</span>
+                            <span class="batch-file-meta">${ext} • ${sizeMB} MB</span>
+                        </div>
+                    </div>
+                    <div class="batch-file-actions">
+                        <label class="batch-diarization-toggle" title="Speaker Diarization">
+                            <input type="checkbox" class="batch-diarization-cb" data-index="${idx}">
+                            <i class="fas fa-users"></i>
+                        </label>
+                        <button type="button" class="batch-file-remove" data-index="${idx}" title="Remove file">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Attach remove handlers
+        this.elements.batchFileList.querySelectorAll('.batch-file-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(e.currentTarget.dataset.index);
+                this.removeFileFromBatch(idx);
+            });
+        });
+    }
+
+    removeFileFromBatch(index) {
+        this.selectedFiles.splice(index, 1);
+
+        if (this.selectedFiles.length === 0) {
+            this.resetFileSelection();
+        } else if (this.selectedFiles.length === 1) {
+            // Switch to single file mode
+            const file = this.selectedFiles[0];
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            const displayName = file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name;
+            this.elements.fileNameDisplay.textContent = `${displayName} • ${sizeMB} MB`;
+            this.elements.fileNameDisplay.style.display = 'flex';
+            this.elements.dropzoneText.textContent = "File selected ✓";
+            this.elements.dropzoneHint.textContent = "Click to change file";
+            this.hideBatchFileList();
+        } else {
+            this.elements.dropzoneText.textContent = `${this.selectedFiles.length} files selected ✓`;
+            this.renderBatchFileList();
+        }
+
+        this.addLog(`🗑️ Removed file, ${this.selectedFiles.length} remaining`, 'info');
+    }
+
+    hideBatchFileList() {
+        if (this.elements.batchFileList) {
+            this.elements.batchFileList.classList.add('hidden');
+            this.elements.batchFileList.innerHTML = '';
+        }
     }
 
     async handleUpload(e) {
         e.preventDefault();
 
-        const file = this.elements.audioFileInput.files[0];
-
-        if (!file) {
-            this.showToast('Please select an audio file', 'error');
-            if (this.elements.dropzone) {
-                this.elements.dropzone.style.borderColor = '#ef4444';
-                setTimeout(() => {
-                    this.elements.dropzone.style.borderColor = 'rgba(94, 234, 212, 0.3)';
-                }, 1000);
+        // Use selectedFiles array
+        if (this.selectedFiles.length === 0) {
+            // Fallback to DOM input
+            const domFiles = Array.from(this.elements.audioFileInput.files);
+            if (domFiles.length > 0) {
+                this.selectedFiles = domFiles;
+            } else {
+                this.showToast('Please select an audio file', 'error');
+                if (this.elements.dropzone) {
+                    this.elements.dropzone.style.borderColor = '#ef4444';
+                    setTimeout(() => {
+                        this.elements.dropzone.style.borderColor = 'rgba(94, 234, 212, 0.3)';
+                    }, 1000);
+                }
+                return;
             }
-            return;
         }
 
         if (this.isProcessing) return;
 
-        await this.processAudioFile(file);
+        if (this.selectedFiles.length === 1) {
+            // Single file — existing flow
+            await this.processAudioFile(this.selectedFiles[0]);
+        } else {
+            // Batch upload
+            await this.handleBatchUpload();
+        }
     }
 
     async processAudioFile(file) {
@@ -407,6 +543,236 @@ class UploadPage {
                     this.ws = null;
                 }
             }, 2000);
+        }
+    }
+
+    // ==========================================
+    // Batch Upload
+    // ==========================================
+
+    async handleBatchUpload() {
+        this.isProcessing = true;
+        this.setProcessingState(true);
+        this.showProcessing();
+        this.hideResultsReady();
+        this.hideBatchResults();
+
+        const selectedLanguage = this.elements.inputLanguage.value;
+        this.requestId = this.generateRequestId();
+        this.connectWebSocket(this.requestId);
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Collect per-file diarization settings from checkboxes
+        const diarizationSettings = [];
+        this.elements.batchFileList.querySelectorAll('.batch-diarization-cb').forEach(cb => {
+            diarizationSettings.push(cb.checked);
+        });
+
+        const numSpeakersVal = this.elements.numSpeakers ? this.elements.numSpeakers.value : '';
+
+        const totalFiles = this.selectedFiles.length;
+        const results = [];
+        let successCount = 0;
+        let errorCount = 0;
+        let lastSuccessData = null;
+
+        this.addLog(`📤 Processing ${totalFiles} files...`, 'info');
+
+        // Show initial batch results with all files as "pending"
+        this.showBatchResultsProgress(this.selectedFiles, results);
+
+        for (let i = 0; i < totalFiles; i++) {
+            const file = this.selectedFiles[i];
+            const fileDiarization = diarizationSettings[i] || false;
+
+            this.addLog(`📄 [${i + 1}/${totalFiles}] Processing: ${file.name}`, 'info');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('language', selectedLanguage);
+                formData.append('summary_mode', 'bullet');
+                formData.append('enable_diarization', fileDiarization ? 'true' : 'false');
+
+                if (fileDiarization && numSpeakersVal) {
+                    formData.append('num_speakers', numSpeakersVal);
+                }
+
+                if (fileDiarization) {
+                    this.addLog(`🎤 Diarization enabled for ${file.name}`, 'info');
+                }
+
+                const response = await this.fetchWithAuth('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response || !response.ok) {
+                    const errorData = await response?.json().catch(() => ({}));
+                    throw new Error(errorData?.detail || 'Upload failed');
+                }
+
+                const data = await response.json();
+                lastSuccessData = data;
+                successCount++;
+
+                results.push({
+                    filename: file.name,
+                    status: 'success',
+                    id: data.id
+                });
+
+                this.addLog(`✅ [${i + 1}/${totalFiles}] Complete: ${file.name}`, 'success');
+
+            } catch (error) {
+                errorCount++;
+                results.push({
+                    filename: file.name,
+                    status: 'error',
+                    error: error.message
+                });
+
+                this.addLog(`❌ [${i + 1}/${totalFiles}] Failed: ${file.name} — ${error.message}`, 'error');
+            }
+
+            // Update results display after each file
+            this.showBatchResultsProgress(this.selectedFiles, results);
+        }
+
+        // All done
+        this.hideProcessing();
+        this.isProcessing = false;
+        this.setProcessingState(false);
+
+        // Store last successful result for "View Results"
+        if (lastSuccessData) {
+            this.currentFile = lastSuccessData;
+            sessionStorage.setItem('transcribeResults', JSON.stringify(lastSuccessData));
+            localStorage.setItem('lastResultId', lastSuccessData.id);
+        }
+
+        // Show final completion
+        this.showBatchComplete(results, successCount, errorCount, totalFiles);
+        this.loadFileHistory();
+
+        this.addLog(`🎉 Batch complete: ${successCount} succeeded, ${errorCount} failed out of ${totalFiles}`,
+            errorCount === 0 ? 'success' : 'warning');
+        this.showToast(
+            `All files processed! ${successCount} succeeded${errorCount > 0 ? `, ${errorCount} failed` : ''}.`,
+            errorCount === 0 ? 'success' : 'warning'
+        );
+
+        setTimeout(() => {
+            if (this.ws) {
+                this.ws.close();
+                this.ws = null;
+            }
+        }, 2000);
+    }
+
+    showBatchResultsProgress(allFiles, completedResults) {
+        if (!this.elements.batchResultsReady) return;
+
+        const totalFiles = allFiles.length;
+        const doneCount = completedResults.length;
+
+        if (this.elements.batchResultsSummary) {
+            this.elements.batchResultsSummary.textContent =
+                `Processing ${doneCount}/${totalFiles} files...`;
+        }
+
+        if (this.elements.batchResultsList) {
+            this.elements.batchResultsList.innerHTML = allFiles.map((file, idx) => {
+                const result = completedResults[idx];
+                let icon, statusClass, statusText;
+
+                if (!result) {
+                    // Pending
+                    icon = 'clock';
+                    statusClass = 'batch-result-pending';
+                    statusText = 'Waiting...';
+                } else if (result.status === 'success') {
+                    icon = 'check-circle';
+                    statusClass = 'batch-result-success';
+                    statusText = 'Transcription complete';
+                } else {
+                    icon = 'exclamation-circle';
+                    statusClass = 'batch-result-error';
+                    statusText = result.error || 'Failed';
+                }
+
+                // Currently processing?
+                if (idx === doneCount && doneCount < totalFiles) {
+                    icon = 'spinner fa-spin';
+                    statusClass = 'batch-result-processing';
+                    statusText = 'Processing...';
+                }
+
+                return `
+                    <div class="batch-result-item ${statusClass}">
+                        <div class="batch-result-icon">
+                            <i class="fas fa-${icon}"></i>
+                        </div>
+                        <div class="batch-result-info">
+                            <span class="batch-result-name">${file.name}</span>
+                            <span class="batch-result-status">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        this.elements.batchResultsReady.classList.remove('hidden');
+    }
+
+    showBatchComplete(results, successCount, errorCount, totalFiles) {
+        if (!this.elements.batchResultsReady) return;
+
+        if (this.elements.batchResultsSummary) {
+            if (errorCount === 0) {
+                this.elements.batchResultsSummary.textContent =
+                    `✅ All ${totalFiles} files processed successfully!`;
+            } else {
+                this.elements.batchResultsSummary.textContent =
+                    `${successCount} succeeded, ${errorCount} failed out of ${totalFiles} files.`;
+            }
+        }
+
+        // Update header text
+        const headerEl = this.elements.batchResultsReady.querySelector('h3');
+        if (headerEl) {
+            headerEl.textContent = errorCount === 0 ? 'All Transcriptions Complete!' : 'Batch Processing Complete';
+        }
+
+        // Final list with success/error states
+        if (this.elements.batchResultsList) {
+            this.elements.batchResultsList.innerHTML = results.map(result => {
+                const isError = result.status === 'error';
+                const icon = isError ? 'exclamation-circle' : 'check-circle';
+                const statusClass = isError ? 'batch-result-error' : 'batch-result-success';
+                const statusText = isError ? (result.error || 'Failed') : 'Transcription complete';
+
+                return `
+                    <div class="batch-result-item ${statusClass}">
+                        <div class="batch-result-icon">
+                            <i class="fas fa-${icon}"></i>
+                        </div>
+                        <div class="batch-result-info">
+                            <span class="batch-result-name">${result.filename}</span>
+                            <span class="batch-result-status">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        this.elements.batchResultsReady.classList.remove('hidden');
+    }
+
+    hideBatchResults() {
+        if (this.elements.batchResultsReady) {
+            this.elements.batchResultsReady.classList.add('hidden');
         }
     }
 
@@ -570,7 +936,7 @@ class UploadPage {
 
     formatDate(dateString) {
         if (!dateString) return 'Unknown';
-        
+
         const date = new Date(dateString);
         const now = new Date();
         const diffMs = now - date;
@@ -582,9 +948,9 @@ class UploadPage {
         if (diffMins < 60) return `${diffMins}m ago`;
         if (diffHours < 24) return `${diffHours}h ago`;
         if (diffDays < 7) return `${diffDays}d ago`;
-        
-        return date.toLocaleDateString('en-US', { 
-            month: 'short', 
+
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
             day: 'numeric',
             year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
         });
@@ -632,6 +998,7 @@ class UploadPage {
             this.elements.uploadForm.reset();
         }
         this.hideResultsReady();
+        this.hideBatchResults();
         this.resetFileSelection();
         this.addLog('🔄 Ready for new upload', 'info');
     }

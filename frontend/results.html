@@ -11,85 +11,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="/static/results.css">
+  <link rel="stylesheet" href="/static/sidebar.css">
 </head>
 
 <body>
   <div class="app-container">
 
-    <!-- Premium Navigation -->
-    <nav class="premium-nav">
-      <div class="nav-container">
-        <div class="nav-brand">
-          <a href="/" class="logo-link">
-            <div class="logo-icon">
-              <i class="fas fa-wave-square"></i>
-            </div>
-            <span class="logo-text">Transcribe<span class="logo-accent">Flow</span></span>
-            <span class="nav-badge">PRO</span>
-          </a>
-          <div class="nav-identifier">
-            <div class="identifier-icon">
-              <i class="fas fa-file-alt"></i>
-            </div>
-            <span class="identifier-text">Results Dashboard</span>
-          </div>
-        </div>
-
-        <!-- Font Size Control -->
-        <div class="nav-controls">
-          <div class="font-size-control">
-            <span class="font-size-label">
-              <i class="fas fa-text-height"></i>
-            </span>
-            <div class="font-size-buttons">
-              <button class="font-size-btn" data-size="12">
-                <span>A</span>
-                <small>Small</small>
-              </button>
-              <button class="font-size-btn active" data-size="14">
-                <span>A</span>
-                <small>Medium</small>
-              </button>
-              <button class="font-size-btn" data-size="16">
-                <span>A</span>
-                <small>Large</small>
-              </button>
-              <button class="font-size-btn" data-size="18">
-                <span>A</span>
-                <small>XL</small>
-              </button>
-            </div>
-            <select id="fontSize" class="hidden">
-              <option value="12">Small</option>
-              <option value="14" selected>Medium</option>
-              <option value="16">Large</option>
-              <option value="18">XL</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="nav-actions">
-          <a href="/upload" class="nav-btn outline">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <span>Upload New</span>
-          </a>
-          <a href="/dashboard" class="nav-btn primary">
-            <i class="fas fa-home"></i>
-            <span>Dashboard</span>
-          </a>
-
-        </div>
-
-        <button class="mobile-menu-btn">
-          <i class="fas fa-bars"></i>
-        </button>
-      </div>
-    </nav>
-
     <!-- Main Content -->
     <main class="main-content">
+      <div id="loadingOverlay" class="loading-overlay visible">
+        <div class="spinner-large"></div>
+        <div class="loading-text">Analyzing Audio</div>
+        <div class="loading-subtext">Fetching transcript and summary...</div>
+      </div>
 
-      <!-- Results Hero -->
       <div class="results-hero">
         <div class="container-narrow">
           <div class="hero-content">
@@ -105,6 +40,39 @@
             <p class="hero-subtitle">
               Review and analyze your transcript with our advanced tools
             </p>
+
+            <!-- Font Size Control (relocated from navbar) -->
+            <div class="results-hero-controls">
+              <div class="font-size-control">
+                <span class="font-size-label">
+                  <i class="fas fa-text-height"></i>
+                </span>
+                <div class="font-size-buttons">
+                  <button class="font-size-btn" data-size="12">
+                    <span>A</span>
+                    <small>Small</small>
+                  </button>
+                  <button class="font-size-btn active" data-size="14">
+                    <span>A</span>
+                    <small>Medium</small>
+                  </button>
+                  <button class="font-size-btn" data-size="16">
+                    <span>A</span>
+                    <small>Large</small>
+                  </button>
+                  <button class="font-size-btn" data-size="18">
+                    <span>A</span>
+                    <small>XL</small>
+                  </button>
+                </div>
+                <select id="fontSize" class="hidden">
+                  <option value="12">Small</option>
+                  <option value="14" selected>Medium</option>
+                  <option value="16">Large</option>
+                  <option value="18">XL</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -292,6 +260,9 @@
                   <!-- Action Buttons -->
                   <div class="card-toolbar">
                     <div class="toolbar-group">
+                      <button id="speakTranscriptCard" class="toolbar-btn speak-btn" title="Read aloud">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
                       <button id="toggleSearchPanel" class="toolbar-btn" title="Search in transcript">
                         <i class="fas fa-search"></i>
                       </button>
@@ -380,10 +351,6 @@
                           <i class="fas fa-language"></i>
                           <span>Translate Now</span>
                         </button>
-                        <button id="speakTranscript" class="btn-outline" title="Read aloud">
-                          <i class="fas fa-volume-up"></i>
-                          <span>Listen</span>
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -431,6 +398,9 @@
 
                   <div class="card-toolbar">
                     <div class="toolbar-group">
+                      <button id="speakTranslatedTranscriptCard" class="toolbar-btn speak-btn" title="Read aloud">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
                       <button id="copyTranslated" class="toolbar-btn" title="Copy translation">
                         <i class="fas fa-copy"></i>
                       </button>
@@ -474,6 +444,9 @@
 
                   <div class="card-toolbar">
                     <div class="toolbar-group">
+                      <button id="speakSummaryCard" class="toolbar-btn speak-btn" title="Read aloud">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
                       <button id="copySummary" class="toolbar-btn" title="Copy summary">
                         <i class="fas fa-copy"></i>
                       </button>
@@ -522,6 +495,9 @@
 
                   <div class="card-toolbar">
                     <div class="toolbar-group">
+                      <button id="speakTranslatedSummaryCard" class="toolbar-btn speak-btn" title="Read aloud">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
                       <button id="copyTranslatedSummary" class="toolbar-btn" title="Copy translation">
                         <i class="fas fa-copy"></i>
                       </button>
@@ -575,14 +551,9 @@
     </footer>
   </div>
 
+  <script src="/static/sidebar.js"></script>
   <script src="/static/results.js"></script>
   <script>
-    // Mobile menu toggle
-    document.querySelector('.mobile-menu-btn')?.addEventListener('click', () => {
-      const navActions = document.querySelector('.nav-actions');
-      navActions.classList.toggle('show');
-    });
-
     // Font size control
     (function () {
       const fontSizeBtns = document.querySelectorAll('.font-size-btn');

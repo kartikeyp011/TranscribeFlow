@@ -130,8 +130,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 });
 
 // Clear any existing tokens on page load
-localStorage.removeItem('access_token');
-localStorage.removeItem('token_type');
+// Tokens are no longer cleared on page load to support persistent login
+// localStorage.removeItem('access_token');
+// localStorage.removeItem('token_type');
 
 // Demo credentials shortcut (Ctrl+Shift+D)
 document.addEventListener('keydown', (e) => {

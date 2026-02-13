@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | TranscribeFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/sidebar.css">
+    <style>
+        /* User Profile Page Styles */
+        .profile-page {
+            padding-top: 40px;
+            min-height: 100vh;
+        }
+
+        .profile-hero {
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+        }
+
+        .profile-hero .hero-title {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .profile-hero .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .profile-container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+        }
+
+        .profile-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--slate-border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .profile-card-header {
+            background: var(--gradient-subtle);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-accent);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+            color: var(--graphite-dark);
+            font-size: 2rem;
+            box-shadow: var(--glow-md);
+        }
+
+        .profile-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-email {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .profile-card-body {
+            padding: 1.5rem 2rem;
+        }
+
+        .profile-info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .profile-info-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--slate-border);
+        }
+
+        .profile-info-icon {
+            width: 40px;
+            min-width: 40px;
+            height: 40px;
+            background: var(--gradient-subtle);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ice-blue);
+            font-size: 1rem;
+        }
+
+        .profile-info-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-info-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .profile-info-value {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .profile-card-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--slate-border);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .profile-btn {
+            flex: 1;
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            border: none;
+            font-family: inherit;
+        }
+
+        .profile-btn.primary {
+            background: var(--gradient-accent);
+            color: var(--graphite-dark);
+        }
+
+        .profile-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-md);
+        }
+
+        .profile-btn.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--error);
+        }
+
+        .profile-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--error);
+        }
+
+        .profile-loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .profile-loading i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: block;
+            color: var(--ice-blue);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Main Content -->
+        <main class="main-content profile-page">
+
+            <div class="profile-hero">
+                <h1 class="hero-title">
+                    Your <span class="title-gradient">Profile</span>
+                </h1>
+                <p class="hero-subtitle">
+                    View and manage your account settings
+                </p>
+            </div>
+
+            <div class="profile-container">
+                <div class="profile-card">
+
+                    <!-- Loading State -->
+                    <div id="profileLoading" class="profile-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading profile...</p>
+                    </div>
+
+                    <!-- Profile Content (hidden until loaded) -->
+                    <div id="profileContent" style="display: none;">
+                        <div class="profile-card-header">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="profile-name" id="profileName">—</div>
+                            <div class="profile-email" id="profileEmail">—</div>
+                        </div>
+
+                        <div class="profile-card-body">
+                            <ul class="profile-info-list">
+                                <li class="profile-info-item">
+                                    <div class="profile-info-icon">
+                                        <i class="fas fa-user-tag"></i>
+                                    </div>
+                                    <div class="profile-info-details">
+                                        <div class="profile-info-label">Username</div>
+                                        <div class="profile-info-value" id="profileUsername">—</div>
+                                    </div>
+                                </li>
+                                <li class="profile-info-item">
+                                    <div class="profile-info-icon">
+                                        <i class="fas fa-envelope"></i>
+                                    </div>
+                                    <div class="profile-info-details">
+                                        <div class="profile-info-label">Email</div>
+                                        <div class="profile-info-value" id="profileEmailDetail">—</div>
+                                    </div>
+                                </li>
+                                <li class="profile-info-item">
+                                    <div class="profile-info-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="profile-info-details">
+                                        <div class="profile-info-label">Member Since</div>
+                                        <div class="profile-info-value" id="profileCreated">—</div>
+                                    </div>
+                                </li>
+                                <li class="profile-info-item">
+                                    <div class="profile-info-icon">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                    <div class="profile-info-details">
+                                        <div class="profile-info-label">Account Status</div>
+                                        <div class="profile-info-value" style="color: var(--success);">
+                                            <i class="fas fa-check-circle"></i> Active
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="profile-card-footer">
+                            <a href="/dashboard" class="profile-btn primary">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <button class="profile-btn danger" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/static/sidebar.js"></script>
+    <script>
+        // Auth check
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // Load profile data
+        async function loadProfile() {
+            try {
+                const res = await fetchWithAuth('/api/auth/me');
+                if (!res) return;
+
+                const data = await res.json();
+
+                document.getElementById('profileName').textContent = data.username || 'User';
+                document.getElementById('profileEmail').textContent = data.email || '—';
+                document.getElementById('profileUsername').textContent = data.username || '—';
+                document.getElementById('profileEmailDetail').textContent = data.email || '—';
+
+                if (data.created_at) {
+                    const date = new Date(data.created_at);
+                    document.getElementById('profileCreated').textContent = date.toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                }
+
+                document.getElementById('profileLoading').style.display = 'none';
+                document.getElementById('profileContent').style.display = 'block';
+            } catch (err) {
+                console.error('Failed to load profile:', err);
+                document.getElementById('profileLoading').innerHTML =
+                    '<i class="fas fa-exclamation-circle" style="color: var(--error);"></i><p>Failed to load profile</p>';
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+
+</html>

@@ -98,13 +98,8 @@
 
 .main-content {
   flex: 1;
-  padding-top: 64px;
-  /* Account for fixed navbar height */
-  transition: padding-top 0.3s ease;
-}
-
-.main-content.nav-hidden {
   padding-top: 0;
+  transition: none;
 }
 
 /* Upload Hero - Fixed overlap issue */
@@ -1790,4 +1785,240 @@
   font-size: 0.85rem;
   min-width: auto;
   border-radius: var(--border-radius-full);
+}
+
+/* ===== BATCH UPLOAD STYLES ===== */
+
+/* Batch File List */
+.batch-file-list {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.batch-file-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.batch-file-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.batch-file-list::-webkit-scrollbar-thumb {
+  background: var(--slate-border);
+  border-radius: 4px;
+}
+
+.batch-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--slate-border);
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-base);
+  animation: slideIn 0.3s ease;
+}
+
+.batch-file-item:hover {
+  border-color: rgba(94, 234, 212, 0.3);
+  background: rgba(94, 234, 212, 0.03);
+}
+
+.batch-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.batch-file-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--gradient-subtle);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ice-blue);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.batch-file-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.batch-file-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batch-file-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.batch-file-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.batch-file-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--error);
+}
+
+/* Batch File Actions */
+.batch-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.batch-diarization-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--slate-border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.batch-diarization-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.batch-diarization-toggle:has(input:checked) {
+  background: rgba(94, 234, 212, 0.15);
+  border-color: var(--ice-blue);
+  color: var(--ice-blue);
+}
+
+.batch-diarization-toggle:hover {
+  border-color: rgba(94, 234, 212, 0.5);
+  color: var(--ice-blue);
+}
+
+/* Batch Results List */
+.batch-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.batch-result-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--slate-border);
+  border-radius: var(--border-radius-sm);
+  animation: slideIn 0.3s ease;
+}
+
+.batch-result-processing {
+  border-left: 3px solid var(--ice-blue);
+}
+
+.batch-result-error {
+  border-left: 3px solid var(--error);
+}
+
+.batch-result-pending {
+  border-left: 3px solid var(--slate-border);
+  opacity: 0.6;
+}
+
+.batch-result-success {
+  border-left: 3px solid #10b981;
+}
+
+.batch-result-pending .batch-result-icon {
+  color: var(--text-muted);
+}
+
+.batch-result-success .batch-result-icon {
+  color: #10b981;
+}
+
+.batch-result-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.batch-result-processing .batch-result-icon {
+  color: var(--ice-blue);
+}
+
+.batch-result-error .batch-result-icon {
+  color: var(--error);
+}
+
+.batch-result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.batch-result-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batch-result-status {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }

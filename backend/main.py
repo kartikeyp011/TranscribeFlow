@@ -448,7 +448,7 @@ async def batch_upload_audio(
     }
 
 # Background processing function
-async def process_audio_file(
+def process_audio_file(
     save_path: str,
     safe_name: str,
     filename: str,
@@ -881,4 +881,10 @@ async def serve_dashboard():
 async def serve_results():
     """Serve results page"""
     file_path = os.path.join(FRONTEND_DIR, "results.html")
+    return FileResponse(file_path)
+
+@app.get("/user")
+async def serve_user():
+    """Serve user profile page"""
+    file_path = os.path.join(FRONTEND_DIR, "user.html")
     return FileResponse(file_path)
