@@ -13,6 +13,7 @@
         { icon: 'fas fa-home', label: 'Home', href: '/', tooltip: 'Home' },
         { icon: 'fas fa-cloud-upload-alt', label: 'Upload', href: '/upload', tooltip: 'Upload Audio' },
         { icon: 'fas fa-chart-pie', label: 'Dashboard', href: '/dashboard', tooltip: 'Dashboard' },
+        { icon: 'fas fa-history', label: 'History', href: '/history', tooltip: 'File History' },
     ];
 
     // ── Inject sidebar HTML ───────────────────────────────────────────

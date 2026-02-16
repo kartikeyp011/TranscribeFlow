@@ -724,18 +724,13 @@ async def delete_file(
 @app.patch("/api/files/{file_id}/star")
 async def star_file(
     file_id: str,
+    request: Request,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """Star/unstar a file"""
-    from pydantic import BaseModel
-    
-    class StarRequest(BaseModel):
-        starred: bool
-    
-    # Get request body
-    request = await Request.json()
-    starred = request.get('starred', False)
+    body = await request.json()
+    starred = body.get('starred', False)
     
     success = crud.star_file(db, file_id, current_user.id, starred)
     
@@ -747,18 +742,13 @@ async def star_file(
 @app.patch("/api/files/{file_id}/pin")
 async def pin_file(
     file_id: str,
+    request: Request,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """Pin/unpin a file"""
-    from pydantic import BaseModel
-    
-    class PinRequest(BaseModel):
-        pinned: bool
-    
-    # Get request body
-    request = await Request.json()
-    pinned = request.get('pinned', False)
+    body = await request.json()
+    pinned = body.get('pinned', False)
     
     success = crud.pin_file(db, file_id, current_user.id, pinned)
     
@@ -857,6 +847,204 @@ async def health():
     return {"status": "ok", "version": "2.2"}
 
 # =====================================================
+# Dashboard Stats
+# =====================================================
+
+# Stop words to exclude from keyword extraction
+STOP_WORDS = {
+    'the','a','an','and','or','but','in','on','at','to','for','of','with',
+    'by','from','is','it','this','that','was','are','were','be','been',
+    'being','have','has','had','do','does','did','will','would','could',
+    'should','may','might','can','shall','not','no','so','if','then',
+    'than','too','very','just','about','above','after','again','all',
+    'also','am','any','because','before','between','both','each','few',
+    'get','got','here','how','into','its','let','like','make','many',
+    'me','more','most','much','my','new','now','only','other','our',
+    'out','over','own','same','she','some','such','take','their','them',
+    'there','these','they','those','through','under','up','us','we',
+    'what','when','where','which','while','who','why','you','your',
+    'i','he','her','him','his','able','said','one','two','well','know',
+    'say','go','see','come','thing','think','look','want','give','use',
+    'find','tell','ask','work','seem','feel','try','leave','call','need',
+    'become','keep','put','mean','still','back','turn','long','right',
+    'going','really','even','way','good','yeah','okay','yes','um','uh',
+    'oh','ah','speaker','would','going','actually','something','people',
+    'time','first','last','next','much','little'
+}
+
+POSITIVE_WORDS = {
+    'good','great','excellent','amazing','wonderful','fantastic','happy',
+    'love','best','better','positive','success','successful','benefit',
+    'improve','progress','achieve','win','growth','opportunity','agree',
+    'pleased','outstanding','brilliant','perfect','nice','awesome',
+    'thanks','thank','appreciate','well','exciting','excited','glad',
+    'enjoy','helpful','productive','efficient','effective','solved',
+}
+
+NEGATIVE_WORDS = {
+    'bad','poor','terrible','awful','horrible','wrong','fail','failure',
+    'problem','issue','error','negative','worse','worst','difficult',
+    'trouble','risk','concern','worried','unfortunately','disagree',
+    'unhappy','disappoint','frustrated','frustrating','delay','delayed',
+    'lost','miss','missed','broken','stuck','confusing','confused',
+    'lack','lacking','unable','cannot','complaint','slow','expensive',
+}
+
+@app.get("/api/dashboard/stats")
+async def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get dashboard statistics for the current user"""
+    from sqlalchemy import func as sqlfunc
+    from collections import Counter
+    import re
+
+    user_id = current_user.id
+
+    # ── Base query: all non-deleted files for this user ──────────
+    base = db.query(db_models.File).filter(
+        db_models.File.user_id == user_id,
+        db_models.File.is_deleted == False
+    )
+
+    all_files = base.all()
+    total_files = len(all_files)
+
+    if total_files == 0:
+        return {
+            "total_files": 0,
+            "total_minutes": 0,
+            "avg_duration_min": 0,
+            "most_used_language": "—",
+            "total_storage_mb": 0,
+            "weekly_files": 0,
+            "weekly_minutes": 0,
+            "files_trend_pct": 0,
+            "minutes_trend_pct": 0,
+            "quota_pct": 0,
+            "common_keywords": [],
+            "sentiment": {"positive": 34, "neutral": 33, "negative": 33},
+            "productivity_score": 0,
+        }
+
+    # ── Basic aggregates ─────────────────────────────────────────
+    total_storage_mb = sum(f.file_size_mb or 0 for f in all_files)
+
+    # Duration: use duration_seconds if available, else estimate ~1 min per MB
+    total_seconds = sum(
+        f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
+        for f in all_files
+    )
+    total_minutes = round(total_seconds / 60, 1)
+    avg_duration_min = round(total_minutes / total_files, 1) if total_files else 0
+
+    # Most used language
+    lang_counts = Counter(f.language for f in all_files if f.language)
+    most_used_language = lang_counts.most_common(1)[0][0] if lang_counts else "—"
+
+    # ── Weekly stats (last 7 days vs prior 7 days) ───────────────
+    now = datetime.utcnow()
+    week_ago = now - timedelta(days=7)
+    two_weeks_ago = now - timedelta(days=14)
+
+    this_week = [f for f in all_files if f.created_at and f.created_at.replace(tzinfo=None) >= week_ago]
+    last_week = [f for f in all_files if f.created_at and two_weeks_ago <= f.created_at.replace(tzinfo=None) < week_ago]
+
+    weekly_files = len(this_week)
+    weekly_seconds = sum(
+        f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
+        for f in this_week
+    )
+    weekly_minutes = round(weekly_seconds / 60, 1)
+
+    last_week_files = len(last_week)
+    last_week_seconds = sum(
+        f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
+        for f in last_week
+    )
+
+    # Trend percentages
+    files_trend_pct = 0
+    if last_week_files > 0:
+        files_trend_pct = round(((weekly_files - last_week_files) / last_week_files) * 100)
+    elif weekly_files > 0:
+        files_trend_pct = 100
+
+    minutes_trend_pct = 0
+    if last_week_seconds > 0:
+        minutes_trend_pct = round(((weekly_seconds - last_week_seconds) / last_week_seconds) * 100)
+    elif weekly_seconds > 0:
+        minutes_trend_pct = 100
+
+    # Quota: weekly files as % of total (capped at 100)
+    quota_pct = min(round((weekly_files / max(total_files, 1)) * 100), 100)
+
+    # ── Common keywords from recent transcripts ──────────────────
+    recent_files = sorted(all_files, key=lambda f: f.created_at or datetime.min, reverse=True)[:20]
+    word_counter = Counter()
+    for f in recent_files:
+        if f.transcript:
+            words = re.findall(r'[a-zA-Z]{3,}', f.transcript.lower())
+            word_counter.update(w for w in words if w not in STOP_WORDS)
+
+    common_keywords = [word.title() for word, _ in word_counter.most_common(8)]
+
+    # ── Sentiment heuristic ──────────────────────────────────────
+    pos_count = 0
+    neg_count = 0
+    total_sentiment_words = 0
+    for f in recent_files:
+        if f.transcript:
+            words = re.findall(r'[a-zA-Z]{3,}', f.transcript.lower())
+            for w in words:
+                if w in POSITIVE_WORDS:
+                    pos_count += 1
+                    total_sentiment_words += 1
+                elif w in NEGATIVE_WORDS:
+                    neg_count += 1
+                    total_sentiment_words += 1
+
+    if total_sentiment_words > 0:
+        pos_pct = round((pos_count / total_sentiment_words) * 100)
+        neg_pct = round((neg_count / total_sentiment_words) * 100)
+        neu_pct = 100 - pos_pct - neg_pct
+    else:
+        pos_pct, neu_pct, neg_pct = 34, 33, 33
+
+    # ── Productivity score ───────────────────────────────────────
+    # Composite: base = weekly_files * 10, capped at 100
+    # Bonus for streaks (any activity in each of last 7 days?)
+    active_days = set()
+    for f in this_week:
+        if f.created_at:
+            active_days.add(f.created_at.replace(tzinfo=None).date())
+
+    streak_bonus = len(active_days) * 5  # up to 35
+    base_score = min(weekly_files * 12, 60)
+    productivity_score = min(base_score + streak_bonus, 100)
+
+    return {
+        "total_files": total_files,
+        "total_minutes": total_minutes,
+        "avg_duration_min": avg_duration_min,
+        "most_used_language": most_used_language.upper(),
+        "total_storage_mb": round(total_storage_mb, 1),
+        "weekly_files": weekly_files,
+        "weekly_minutes": weekly_minutes,
+        "files_trend_pct": files_trend_pct,
+        "minutes_trend_pct": minutes_trend_pct,
+        "quota_pct": quota_pct,
+        "common_keywords": common_keywords,
+        "sentiment": {
+            "positive": pos_pct,
+            "neutral": neu_pct,
+            "negative": neg_pct,
+        },
+        "productivity_score": productivity_score,
+    }
+
+# =====================================================
 # Frontend Routes (No Auth Check)
 # =====================================================
 
@@ -894,6 +1082,12 @@ async def serve_dashboard():
 async def serve_results():
     """Serve results page"""
     file_path = os.path.join(FRONTEND_DIR, "results.html")
+    return FileResponse(file_path)
+
+@app.get("/history")
+async def serve_history():
+    """Serve history (file manager) page"""
+    file_path = os.path.join(FRONTEND_DIR, "history.html")
     return FileResponse(file_path)
 
 @app.get("/user")

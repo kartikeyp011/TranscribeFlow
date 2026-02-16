@@ -2,219 +2,265 @@
 <html lang="en" class="dark">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | TranscribeFlow</title>
-  <link rel="stylesheet" href="/static/styles.css">
-  <link rel="stylesheet" href="/static/dashboard.css">
-  <link rel="stylesheet" href="/static/sidebar.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | TranscribeFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <link rel="stylesheet" href="/static/sidebar.css">
 </head>
 
 <body>
-  <div class="app-container">
+    <div class="app-container">
 
-    <!-- Main Content -->
-    <main class="main-content dashboard-page">
+        <!-- Main Content -->
+        <main class="main-content">
 
-      <!-- Dashboard Header -->
-      <div class="dashboard-header">
-        <div class="container">
-          <div class="header-content">
-            <div class="header-text">
-              <h1>Dashboard</h1>
-              <p class="subtitle">Manage your transcribed audio files</p>
+            <!-- ===== Page Header ===== -->
+            <section class="dash-header">
+                <div class="dash-container">
+                    <div class="dash-header-content">
+                        <h1 class="dash-title">
+                            <span class="title-gradient">Dashboard</span>
+                        </h1>
+                        <p class="dash-subtitle">Your audio intelligence overview</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== Main Grid ===== -->
+            <section class="dash-content">
+                <div class="dash-container">
+                    <div class="dash-grid">
+
+                        <!-- ──────────── QUICK ACTIONS ──────────── -->
+                        <div class="dash-card card-animate" data-delay="0">
+                            <div class="dash-card-header">
+                                <div class="dash-card-icon">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <h2 class="dash-card-title">Quick Actions</h2>
+                            </div>
+                            <div class="dash-card-body">
+                                <div class="actions-grid">
+                                    <!-- Upload New Audio -->
+                                    <div class="action-card" id="actionUpload">
+                                        <div class="action-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="action-info">
+                                            <h3>Upload New Audio</h3>
+                                            <p>Transcribe &amp; summarize a new file</p>
+                                        </div>
+                                        <i class="fas fa-arrow-right action-arrow"></i>
+                                    </div>
+                                    <!-- Go to History -->
+                                    <div class="action-card" id="actionHistory">
+                                        <div class="action-icon history">
+                                            <i class="fas fa-history"></i>
+                                        </div>
+                                        <div class="action-info">
+                                            <h3>Go to History</h3>
+                                            <p>View your past transcriptions</p>
+                                        </div>
+                                        <i class="fas fa-arrow-right action-arrow"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ──────────── USAGE SNAPSHOT ──────────── -->
+                        <div class="dash-card card-animate" data-delay="1">
+                            <div class="dash-card-header">
+                                <div class="dash-card-icon">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <h2 class="dash-card-title">Usage Snapshot</h2>
+                            </div>
+                            <div class="dash-card-body">
+                                <div class="stats-mini-grid">
+                                    <!-- Minutes Transcribed -->
+                                    <div class="stat-mini">
+                                        <div class="stat-mini-value counter" id="statMinutes">0</div>
+                                        <div class="stat-mini-label">Total Minutes</div>
+                                        <div class="stat-mini-trend" id="trendMinutes">
+                                            <i class="fas fa-minus"></i> —
+                                        </div>
+                                    </div>
+                                    <!-- Files Processed -->
+                                    <div class="stat-mini">
+                                        <div class="stat-mini-value counter" id="statFiles">0</div>
+                                        <div class="stat-mini-label">Files Processed</div>
+                                        <div class="stat-mini-trend" id="trendFiles">
+                                            <i class="fas fa-minus"></i> —
+                                        </div>
+                                    </div>
+                                    <!-- Most Used Language -->
+                                    <div class="stat-mini">
+                                        <div class="stat-mini-value lang-value" id="statLanguage">—</div>
+                                        <div class="stat-mini-label">Most Used Language</div>
+                                        <div class="stat-mini-trend stable">
+                                            <i class="fas fa-minus"></i> Stable
+                                        </div>
+                                    </div>
+                                    <!-- Audio Duration Frequency -->
+                                    <div class="stat-mini">
+                                        <div class="stat-mini-value counter" id="statAvgDuration">0</div>
+                                        <div class="stat-mini-label">Avg Duration (min)</div>
+                                        <div class="stat-mini-trend stable">
+                                            <i class="fas fa-minus"></i> —
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Progress Bar -->
+                                <div class="usage-progress">
+                                    <div class="progress-label">
+                                        <span>Weekly Quota Used</span>
+                                        <span class="progress-value" id="quotaPercent">0%</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill-bar" id="quotaBar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ──────────── AI INSIGHTS ──────────── -->
+                        <div class="dash-card card-full card-animate" data-delay="2">
+                            <div class="dash-card-header">
+                                <div class="dash-card-icon">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <h2 class="dash-card-title">AI Insights</h2>
+                            </div>
+                            <div class="dash-card-body">
+                                <div class="insights-grid">
+
+                                    <!-- 1) Common Topics -->
+                                    <div class="insight-section">
+                                        <h3 class="insight-label">Common Topics</h3>
+                                        <div class="tag-chips" id="topicsContainer">
+                                            <span class="tag-chip" style="opacity:0.5">Loading…</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2) Sentiment Trend -->
+                                    <div class="insight-section">
+                                        <h3 class="insight-label">Sentiment Trend</h3>
+                                        <div class="sentiment-bars" id="sentimentContainer">
+                                            <div class="sentiment-row">
+                                                <span class="sentiment-label">Positive</span>
+                                                <div class="sentiment-track">
+                                                    <div class="sentiment-fill positive" id="sentimentPosBar" style="--bar-width: 0%"></div>
+                                                </div>
+                                                <span class="sentiment-pct" id="sentimentPosPct">0%</span>
+                                            </div>
+                                            <div class="sentiment-row">
+                                                <span class="sentiment-label">Neutral</span>
+                                                <div class="sentiment-track">
+                                                    <div class="sentiment-fill neutral" id="sentimentNeuBar" style="--bar-width: 0%"></div>
+                                                </div>
+                                                <span class="sentiment-pct" id="sentimentNeuPct">0%</span>
+                                            </div>
+                                            <div class="sentiment-row">
+                                                <span class="sentiment-label">Negative</span>
+                                                <div class="sentiment-track">
+                                                    <div class="sentiment-fill negative" id="sentimentNegBar" style="--bar-width: 0%"></div>
+                                                </div>
+                                                <span class="sentiment-pct" id="sentimentNegPct">0%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 3) Productivity Score -->
+                                    <div class="insight-section center">
+                                        <h3 class="insight-label">Productivity Score</h3>
+                                        <div class="circular-progress" id="productivityRing">
+                                            <div class="circular-inner">
+                                                <span class="circular-value" id="productivityValue">0</span>
+                                                <span class="circular-unit">%</span>
+                                            </div>
+                                        </div>
+                                        <p class="insight-hint">Based on this week's activity</p>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /.dash-grid -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ===== Floating Chatbot ===== -->
+        <!-- Toggle Button -->
+        <button class="chatbot-toggle" id="chatbotToggle" aria-label="Open chat assistant">
+            <i class="fas fa-comment-dots chatbot-toggle-icon" id="chatbotIcon"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div class="chatbot-window" id="chatbotWindow">
+            <div class="chatbot-header">
+                <div class="chatbot-header-info">
+                    <div class="chatbot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3>TranscribeFlow Assistant</h3>
+                        <span class="chatbot-status">Online</span>
+                    </div>
+                </div>
+                <button class="chatbot-close" id="chatbotClose" aria-label="Close chat">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="header-actions">
-              <button id="refreshBtn" class="btn-icon" title="Refresh">
-                <i class="fas fa-sync-alt"></i>
-              </button>
+            <div class="chatbot-messages" id="chatbotMessages">
+                <div class="chat-msg bot">
+                    <div class="chat-bubble">Hi there! 👋 How can I help you today?</div>
+                </div>
             </div>
-          </div>
+            <div class="chatbot-input-area">
+                <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Type a message…"
+                    autocomplete="off">
+                <button class="chatbot-send" id="chatbotSend" aria-label="Send message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
-      </div>
 
-      <!-- Stats Cards -->
-      <div class="stats-section">
-        <div class="container">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon blue">
-                <i class="fas fa-file-audio"></i>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value" id="totalFiles">0</div>
-                <div class="stat-label">Total Files</div>
-              </div>
+        <!-- Footer -->
+        <footer class="premium-footer">
+            <div class="footer-bottom">
+                <div class="copyright">
+                    © 2026 TranscribeFlow. All rights reserved.
+                </div>
+                <div class="footer-legal">
+                    <a href="/privacy" class="legal-link">Privacy</a>
+                    <a href="/terms" class="legal-link">Terms</a>
+                    <a href="/security" class="legal-link">Security</a>
+                </div>
             </div>
-
-            <div class="stat-card">
-              <div class="stat-icon green">
-                <i class="fas fa-star"></i>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value" id="starredFiles">0</div>
-                <div class="stat-label">Starred</div>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon purple">
-                <i class="fas fa-language"></i>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value" id="languagesCount">0</div>
-                <div class="stat-label">Languages</div>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon orange">
-                <i class="fas fa-hdd"></i>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value" id="totalStorage">0 MB</div>
-                <div class="stat-label">Storage Used</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Search and Filters -->
-      <div class="filters-section">
-        <div class="container">
-          <div class="filters-bar">
-            <div class="search-box">
-              <i class="fas fa-search"></i>
-              <input type="text" id="searchInput" placeholder="Search files..." />
-            </div>
-
-            <div class="filter-buttons">
-              <button class="filter-btn active" data-filter="all">
-                <i class="fas fa-list"></i>
-                All
-              </button>
-              <button class="filter-btn" data-filter="starred">
-                <i class="fas fa-star"></i>
-                Starred
-              </button>
-              <button class="filter-btn" data-filter="pinned">
-                <i class="fas fa-thumbtack"></i>
-                Pinned
-              </button>
-            </div>
-
-            <div class="view-toggle">
-              <button class="view-btn active" data-view="grid" title="Grid view">
-                <i class="fas fa-th"></i>
-              </button>
-              <button class="view-btn" data-view="list" title="List view">
-                <i class="fas fa-list"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Files Section -->
-      <div class="files-section">
-        <div class="container">
-
-          <!-- Loading State -->
-          <div id="loadingState" class="loading-state">
-            <div class="spinner-large"></div>
-            <p>Loading your files...</p>
-          </div>
-
-          <!-- Empty State -->
-          <div id="emptyState" class="empty-state hidden">
-            <div class="empty-icon">
-              <i class="fas fa-folder-open"></i>
-            </div>
-            <h3>No files yet</h3>
-            <p>Upload your first audio file to get started</p>
-            <a href="/upload" class="btn-primary">
-              <i class="fas fa-upload"></i>
-              Upload Audio
-            </a>
-          </div>
-
-          <!-- Files Grid -->
-          <div id="filesGrid" class="files-grid hidden">
-            <!-- Files will be loaded here dynamically -->
-          </div>
-
-          <!-- Pagination -->
-          <div id="pagination" class="pagination hidden">
-            <button id="prevBtn" class="btn-outline" disabled>
-              <i class="fas fa-chevron-left"></i>
-              Previous
-            </button>
-            <span id="pageInfo" class="page-info">Page 1 of 1</span>
-            <button id="nextBtn" class="btn-outline" disabled>
-              Next
-              <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-    </main>
-
-    <!-- Toast Container -->
-    <div id="toastContainer" class="toast-container"></div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal hidden">
-      <div class="modal-overlay" onclick="closeDeleteModal()"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Delete File?</h3>
-          <button class="modal-close" onclick="closeDeleteModal()">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete this file? This action cannot be undone.</p>
-          <p class="file-name-display" id="deleteFileName"></p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-outline" onclick="closeDeleteModal()">Cancel</button>
-          <button class="btn-danger" onclick="confirmDelete()">
-            <i class="fas fa-trash"></i>
-            Delete
-          </button>
-        </div>
-      </div>
+        </footer>
     </div>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <div class="footer-container">
-        <div class="footer-copyright">
-          © 2026 TranscribeFlow. All rights reserved.
-        </div>
-      </div>
-    </footer>
-
-  </div>
-
-  <script src="/static/sidebar.js"></script>
-  <script src="/static/dashboard.js"></script>
-  <script>
-    // Auth check
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      window.location.href = '/login';
-    }
-    // fetchWithAuth and logout are provided by sidebar.js
-  </script>
+    <!-- Scripts -->
+    <script src="/static/sidebar.js"></script>
+    <script src="/static/dashboard.js"></script>
+    <script>
+        // Auth guard
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+    </script>
 </body>
 
 </html>
