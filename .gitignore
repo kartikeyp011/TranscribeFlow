@@ -39,3 +39,7 @@ create_tables.pysample/
 
 #Diaritization Models
 models--pyannote--*
+
+# Ignore all .txt files in backend and frontend folders
+/backend/*.txt
+/frontend/*.txt

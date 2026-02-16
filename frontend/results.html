@@ -272,9 +272,21 @@
                       <button id="copyTranscript" class="toolbar-btn" title="Copy transcript">
                         <i class="fas fa-copy"></i>
                       </button>
-                      <button id="exportTxt" class="toolbar-btn" title="Export transcript">
-                        <i class="fas fa-download"></i>
-                      </button>
+                      <div class="export-dropdown-wrapper">
+                        <button id="exportTxt" class="toolbar-btn" title="Export transcript">
+                          <i class="fas fa-download"></i>
+                        </button>
+                        <div class="export-dropdown-menu" id="transcriptExportMenu">
+                          <button class="export-option" data-format="txt" data-type="transcript"><i
+                              class="fas fa-file-alt"></i> TXT</button>
+                          <button class="export-option" data-format="pdf" data-type="transcript"><i
+                              class="fas fa-file-pdf"></i> PDF</button>
+                          <button class="export-option" data-format="docx" data-type="transcript"><i
+                              class="fas fa-file-word"></i> DOCX</button>
+                          <button class="export-option" data-format="srt" data-type="transcript"><i
+                              class="fas fa-closed-captioning"></i> SRT</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -404,9 +416,21 @@
                       <button id="copyTranslated" class="toolbar-btn" title="Copy translation">
                         <i class="fas fa-copy"></i>
                       </button>
-                      <button id="exportTranslated" class="toolbar-btn" title="Export translation">
-                        <i class="fas fa-download"></i>
-                      </button>
+                      <div class="export-dropdown-wrapper">
+                        <button id="exportTranslated" class="toolbar-btn" title="Export translation">
+                          <i class="fas fa-download"></i>
+                        </button>
+                        <div class="export-dropdown-menu" id="translatedTranscriptExportMenu">
+                          <button class="export-option" data-format="txt" data-type="translatedTranscript"><i
+                              class="fas fa-file-alt"></i> TXT</button>
+                          <button class="export-option" data-format="pdf" data-type="translatedTranscript"><i
+                              class="fas fa-file-pdf"></i> PDF</button>
+                          <button class="export-option" data-format="docx" data-type="translatedTranscript"><i
+                              class="fas fa-file-word"></i> DOCX</button>
+                          <button class="export-option" data-format="srt" data-type="translatedTranscript"><i
+                              class="fas fa-closed-captioning"></i> SRT</button>
+                        </div>
+                      </div>
                       <button id="closeTranslation" class="toolbar-btn" title="Close translation">
                         <i class="fas fa-times"></i>
                       </button>
@@ -450,9 +474,21 @@
                       <button id="copySummary" class="toolbar-btn" title="Copy summary">
                         <i class="fas fa-copy"></i>
                       </button>
-                      <button id="exportSummaryTxt" class="toolbar-btn" title="Export summary">
-                        <i class="fas fa-download"></i>
-                      </button>
+                      <div class="export-dropdown-wrapper">
+                        <button id="exportSummaryTxt" class="toolbar-btn" title="Export summary">
+                          <i class="fas fa-download"></i>
+                        </button>
+                        <div class="export-dropdown-menu" id="summaryExportMenu">
+                          <button class="export-option" data-format="txt" data-type="summary"><i
+                              class="fas fa-file-alt"></i> TXT</button>
+                          <button class="export-option" data-format="pdf" data-type="summary"><i
+                              class="fas fa-file-pdf"></i> PDF</button>
+                          <button class="export-option" data-format="docx" data-type="summary"><i
+                              class="fas fa-file-word"></i> DOCX</button>
+                          <button class="export-option" data-format="srt" data-type="summary"><i
+                              class="fas fa-closed-captioning"></i> SRT</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -501,9 +537,21 @@
                       <button id="copyTranslatedSummary" class="toolbar-btn" title="Copy translation">
                         <i class="fas fa-copy"></i>
                       </button>
-                      <button id="exportTranslatedSummary" class="toolbar-btn" title="Export translation">
-                        <i class="fas fa-download"></i>
-                      </button>
+                      <div class="export-dropdown-wrapper">
+                        <button id="exportTranslatedSummary" class="toolbar-btn" title="Export translation">
+                          <i class="fas fa-download"></i>
+                        </button>
+                        <div class="export-dropdown-menu" id="translatedSummaryExportMenu">
+                          <button class="export-option" data-format="txt" data-type="translatedSummary"><i
+                              class="fas fa-file-alt"></i> TXT</button>
+                          <button class="export-option" data-format="pdf" data-type="translatedSummary"><i
+                              class="fas fa-file-pdf"></i> PDF</button>
+                          <button class="export-option" data-format="docx" data-type="translatedSummary"><i
+                              class="fas fa-file-word"></i> DOCX</button>
+                          <button class="export-option" data-format="srt" data-type="translatedSummary"><i
+                              class="fas fa-closed-captioning"></i> SRT</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

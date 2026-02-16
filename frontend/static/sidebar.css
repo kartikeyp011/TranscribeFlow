@@ -5,12 +5,12 @@
     --sidebar-collapsed-width: 68px;
     --sidebar-expanded-width: 240px;
     --sidebar-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    --sidebar-bg: rgba(10, 15, 28, 0.6);
+    --sidebar-bg: rgba(22, 33, 52, 0.95);
     --sidebar-bg-blur: blur(20px);
-    --sidebar-border: rgba(94, 234, 212, 0.06);
+    --sidebar-border: rgba(94, 234, 212, 0.15);
     --sidebar-icon-size: 18px;
-    --sidebar-hover-bg: rgba(94, 234, 212, 0.06);
-    --sidebar-active-bg: rgba(94, 234, 212, 0.1);
+    --sidebar-hover-bg: rgba(94, 234, 212, 0.1);
+    --sidebar-active-bg: rgba(94, 234, 212, 0.15);
 }
 
 /* --- Sidebar Container --- */

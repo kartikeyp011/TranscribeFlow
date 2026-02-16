@@ -102,6 +102,7 @@ class UploadPage {
             progressPercent: document.getElementById('progressPercent'),
             progressStatus: document.getElementById('progressStatus'),
             inputLanguage: document.getElementById('inputLanguage'),
+            summaryMode: document.getElementById('summaryMode'),
 
             resultsReady: document.getElementById('resultsReady'),
             viewResultsBtn: document.getElementById('viewResultsBtn'),
@@ -485,7 +486,7 @@ class UploadPage {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('language', selectedLanguage);
-            formData.append('summary_mode', 'bullet');
+            formData.append('summary_mode', this.elements.summaryMode ? this.elements.summaryMode.value : 'bullet');
 
             if (this.elements.enableDiarization && this.elements.enableDiarization.checked) {
                 formData.append('enable_diarization', 'true');
@@ -592,7 +593,7 @@ class UploadPage {
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('language', selectedLanguage);
-                formData.append('summary_mode', 'bullet');
+                formData.append('summary_mode', this.elements.summaryMode ? this.elements.summaryMode.value : 'bullet');
                 formData.append('enable_diarization', fileDiarization ? 'true' : 'false');
 
                 if (fileDiarization && numSpeakersVal) {

@@ -15,24 +15,36 @@ TranscribeFlow is a modern, full-stack web application designed to transform aud
 ## ✨ Key Features
 
 ### 🎧 Core Intelligence
--   **High-Accuracy Transcription:** Powered by **Faster-Whisper** (large-v3) for industry-leading speech recognition.
--   **Speaker Diarization:** Automatically identifies "Who spoke when" using **Pyannote Audio 3.1**, distinguishing multiple speakers in conversations.
--   **Smart Summarization:** Generates concise bullet-point summaries and key takeaways using **Groq API (Llama 3.1 8B/70B)** for lightning-fast inference.
+-   **High-Accuracy Transcription:** Powered by **Whisper Large-v3-turbo** via Groq for lightning-fast, industry-leading speech recognition.
+-   **Speaker Diarization:** Automatically identifies "Who spoke when" using **Pyannote Audio 3.1**, distinguishing multiple speakers in conversations with high precision.
+-   **Smart Summarization:** Generates concise summaries using **Llama 3.1 8B Instant** (Groq). Supports multiple modes:
+    -   *Bullet Points* (Default)
+    -   *Meeting Minutes* (Attendees, Decisions, Next Steps)
+    -   *Action Items* (Task extraction)
+    -   *Study Notes* (Key concepts & definitions)
+    -   *Blog Post* (Content creation)
 
 ### 🌍 Global Accessibility
--   **Multi-Language Support:** Configure input language for 22 languages including English, Hindi, Spanish, French, German, Chinese, and more.
--   **Instant Translation:** Translate transcripts and summaries into major languages on-the-fly using **Deep Translator**.
+-   **Multi-Language Support:** Configure input language for **22+ languages** including English, Hindi, Spanish, French, German, Chinese, Japanese, and more.
+-   **Instant Translation:** Translate transcripts and summaries into major languages on-the-fly using **Llama 3.1** and **Deep Translator**.
+-   **Language Detection:** Automatically detects the spoken language of the uploaded audio.
 
 ### 💻 Modern User Experience
 -   **Galaxy Theme:** A premium, dark-mode interface with animated nebula backgrounds, glassmorphism cards, and smooth transitions.
--   **Interactive Player:** Custom audio player fully synced with the transcript. Click any sentence to jump to that timestamp.
--   **Smart Search:** Real-time search to instantly locate keywords or phrases within the transcript.
--   **Responsive Design:** Fully optimized layout for desktop, tablet, and mobile devices.
+-   **Interactive Player:** Custom audio player with waveform visualization. Click any transcript segment to jump to that timestamp.
+-   **Real-time Logs:** Watch the AI pipeline in action with live WebSocket-powered processing logs.
+-   **Batch Processing:** Upload multiple files at once and let them process in the background.
+-   **Smart Search & Filters:** Instantly find keywords within transcripts. Filter files by Starred, Pinned, or Date.
+
+### 📄 Export & Management
+-   **Multi-Format Export:** Download your results in **TXT**, **PDF**, **DOCX**, and **SRT** (Subtitle) formats.
+-   **File Management:** Organize your transcriptions with pinning and starring capabilities.
+-   **Secure Storage:** All files are securely stored and associated with your user account.
 
 ### 🛡️ Security & Reliability
--   **User Authentication:** Secure signup/login system with JWT (JSON Web Tokens) and password hashing.
--   **Robust Backend:** Built on FastAPI with SQLAlchemy ORM for reliable data handling.
--   **Data Persistence:** MySQL database integration for storing user profiles, transcription history, and metadata.
+-   **User Authentication:** Secure signup/login system with **JWT** (JSON Web Tokens) and password hashing.
+-   **Robust Backend:** Built on **FastAPI** with **SQLAlchemy ORM** for reliable data handling.
+-   **Data Persistence:** **MySQL** database integration for scalable storage of user profiles and transcription history.
 
 ---
 
@@ -41,18 +53,18 @@ TranscribeFlow is a modern, full-stack web application designed to transform aud
 ### Backend
 -   **Framework:** FastAPI (Python 3.10+)
 -   **AI Engines:**
-    -   *Transcription:* Faster-Whisper (CTranslate2)
-    -   *Diarization:* Pyannote Audio (HuggingFace)
-    -   *Summarization:* Groq API (Llama 3.1), Hugging Face Fallback
--   **Database:** MySQL (Production-grade RDMS) with SQLAlchemy
--   **Authentication:** OAuth2 with Password Flow (JWT)
--   **Utilities:** Pydub/Librosa (Audio processing), ReportLab (PDF Export)
+    -   *Transcription:* **Whisper-Large-v3-Turbo** (via Groq API) for speed & accuracy.
+    -   *Diarization:* **Pyannote Audio 3.1** (Hugging Face) for speaker identification.
+    -   *Summarization/Translation:* **Llama 3.1 8B Instant** (Groq API) & **Deep Translator**.
+-   **Database:** MySQL (Production-grade RDMS) with **SQLAlchemy ORM**.
+-   **Authentication:** OAuth2 with Password Flow (JWT) & bcrypt hashing.
+-   **Utilities:** Pydub (Audio processing), ReportLab (PDF), Python-docx (Word), Pysrt (Subtitles).
 
 ### Frontend
--   **Core:** HTML5, CSS3, JavaScript (ES6+ Modules)
--   **Styling:** Vanilla CSS with Custom Properties (Variables) for theming.
+-   **Core:** HTML5, CSS3, JavaScript (ES6+ Modules).
+-   **Styling:** Vanilla CSS with **CSS Variables** for the "Galaxy" theme and responsive design.
 -   **Components:** Font Awesome 6 (Icons), Google Fonts (Inter).
--   **Architecture:** No-build tooling required; runs natively in browser.
+-   **Architecture:** Zero-build step; runs natively in modern browsers.
 
 ---
 

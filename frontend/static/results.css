@@ -535,6 +535,12 @@ h4 {
   overflow: hidden;
 }
 
+/* Extra space inside translated cards after the content */
+#translatedTranscriptCard .scrollable,
+#translatedSummaryCard .scrollable {
+  padding-bottom: var(--spacing-2xl);
+}
+
 /* Dashboard Cards */
 .dashboard-card {
   background: var(--bg-surface);
@@ -572,7 +578,7 @@ h4 {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-lg);
-  min-height: 350px;
+  min-height: 200px;
 }
 
 /* Text Content Styling */
@@ -1945,4 +1951,83 @@ mark {
     right: var(--spacing-md);
     max-width: none;
   }
+}
+
+/* ==========================================================================
+   EXPORT FORMAT DROPDOWN
+   ========================================================================== */
+
+.export-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.export-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: rgba(26, 35, 50, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(94, 234, 212, 0.25);
+  border-radius: var(--border-radius-md);
+  padding: 6px;
+  min-width: 140px;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.95);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 12px rgba(94, 234, 212, 0.08);
+}
+
+.export-dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.export-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.export-option:hover {
+  background: rgba(94, 234, 212, 0.1);
+  color: var(--ice-blue);
+}
+
+.export-option i {
+  font-size: 0.9rem;
+  width: 18px;
+  text-align: center;
+}
+
+.export-option[data-format="pdf"] i {
+  color: #ef4444;
+}
+
+.export-option[data-format="docx"] i {
+  color: #3b82f6;
+}
+
+.export-option[data-format="srt"] i {
+  color: #f59e0b;
+}
+
+.export-option[data-format="txt"] i {
+  color: var(--text-muted);
 }

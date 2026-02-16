@@ -796,6 +796,7 @@ async def get_starred_files(
 async def export_file(
     file_id: str,
     format: str,  # txt, pdf, docx, or srt
+    content: str = "both",  # transcript, summary, or both
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -806,21 +807,33 @@ async def export_file(
         raise HTTPException(404, "File not found")
     
     format = format.lower()
+    content = content.lower()
+    
+    # Determine what text to export based on content param
+    if content == "transcript":
+        transcript_text = file.transcript or ""
+        summary_text = ""
+    elif content == "summary":
+        transcript_text = ""
+        summary_text = file.summary or ""
+    else:  # both
+        transcript_text = file.transcript or ""
+        summary_text = file.summary or ""
     
     if format == "txt":
-        content = export_txt(file.transcript, file.summary, file.filename)
+        export_content = export_txt(transcript_text, summary_text, file.filename, content)
         media_type = "text/plain"
         extension = "txt"
     elif format == "pdf":
-        content = export_pdf(file.transcript, file.summary, file.filename)
+        export_content = export_pdf(transcript_text, summary_text, file.filename, content)
         media_type = "application/pdf"
         extension = "pdf"
     elif format == "docx":
-        content = export_docx(file.transcript, file.summary, file.filename)
+        export_content = export_docx(transcript_text, summary_text, file.filename, content)
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         extension = "docx"
     elif format == "srt":
-        content = export_srt(file.word_timestamps or "[]", file.transcript)
+        export_content = export_srt(file.word_timestamps or "[]", file.transcript)
         media_type = "application/x-subrip"
         extension = "srt"
     else:
@@ -829,7 +842,7 @@ async def export_file(
     filename = f"{file.filename.rsplit('.', 1)[0]}.{extension}"
     
     return StreamingResponse(
-        BytesIO(content),
+        BytesIO(export_content),
         media_type=media_type,
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )

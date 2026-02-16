@@ -228,7 +228,10 @@ class ResultsPage {
         }
 
         if (this.elements.exportTranslated) {
-            this.elements.exportTranslated.addEventListener('click', () => this.exportText('translatedTranscript'));
+            this.elements.exportTranslated.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleExportDropdown('translatedTranscriptExportMenu');
+            });
         }
 
         if (this.elements.copyTranslatedSummary) {
@@ -236,7 +239,10 @@ class ResultsPage {
         }
 
         if (this.elements.exportTranslatedSummary) {
-            this.elements.exportTranslatedSummary.addEventListener('click', () => this.exportText('translatedSummary'));
+            this.elements.exportTranslatedSummary.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleExportDropdown('translatedSummaryExportMenu');
+            });
         }
 
         // Copy/Export Buttons
@@ -245,7 +251,10 @@ class ResultsPage {
         }
 
         if (this.elements.exportTxt) {
-            this.elements.exportTxt.addEventListener('click', () => this.exportText('transcript'));
+            this.elements.exportTxt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleExportDropdown('transcriptExportMenu');
+            });
         }
 
         if (this.elements.copySummary) {
@@ -253,8 +262,31 @@ class ResultsPage {
         }
 
         if (this.elements.exportSummaryTxt) {
-            this.elements.exportSummaryTxt.addEventListener('click', () => this.exportText('summary'));
+            this.elements.exportSummaryTxt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleExportDropdown('summaryExportMenu');
+            });
         }
+
+        // Export format option clicks (event delegation)
+        document.addEventListener('click', (e) => {
+            const option = e.target.closest('.export-option');
+            if (option) {
+                e.stopPropagation();
+                const format = option.dataset.format;
+                const type = option.dataset.type;
+                this.exportInFormat(type, format);
+                // Close all export dropdowns
+                document.querySelectorAll('.export-dropdown-menu').forEach(m => m.classList.remove('show'));
+            }
+        });
+
+        // Close export dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.export-dropdown-wrapper')) {
+                document.querySelectorAll('.export-dropdown-menu').forEach(m => m.classList.remove('show'));
+            }
+        });
 
         // File Info Buttons
         const copyFileInfoBtn = document.getElementById('copyFileInfoBtn');
@@ -1084,30 +1116,73 @@ class ResultsPage {
         }
     }
 
-    exportText(type) {
+    toggleExportDropdown(menuId) {
+        const menu = document.getElementById(menuId);
+        if (!menu) return;
+
+        // Close all other export dropdowns first
+        document.querySelectorAll('.export-dropdown-menu').forEach(m => {
+            if (m.id !== menuId) m.classList.remove('show');
+        });
+
+        menu.classList.toggle('show');
+    }
+
+    async exportInFormat(type, format) {
+        const fileId = this.currentData?.id;
+
+        // For transcript and summary, use the backend export API
+        if ((type === 'transcript' || type === 'summary') && fileId) {
+            try {
+                const response = await this.fetchWithAuth(`/api/files/${fileId}/export?format=${format}&content=${type}`);
+                if (!response || !response.ok) {
+                    throw new Error('Export failed');
+                }
+                const blob = await response.blob();
+                const baseName = (this.currentData?.filename || 'file').replace(/\.[^.]+$/, '');
+                const filename = `${baseName}_${type}.${format}`;
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                this.showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} exported as ${format.toUpperCase()}`, 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                this.showToast('Failed to export: ' + error.message, 'error');
+            }
+            return;
+        }
+
+        // For translated content or if no fileId, fall back to client-side TXT export
         let text = '';
-        let filename = '';
         let label = type;
 
         if (type === 'transcript') {
             text = this.currentData?.transcription || this.currentData?.transcript || '';
-            filename = `transcript_${Date.now()}.txt`;
         } else if (type === 'summary') {
             text = this.currentData?.summary || '';
-            filename = `summary_${Date.now()}.txt`;
         } else if (type === 'translatedTranscript') {
             text = this.lastTranslatedText || '';
-            const lang = this.lastTranslatedLang || 'translated';
-            filename = `transcript_${lang}_${Date.now()}.txt`;
             label = 'Translated transcript';
         } else if (type === 'translatedSummary') {
             text = this.lastTranslatedSummary || '';
-            const lang = this.lastTranslatedLang || 'translated';
-            filename = `summary_${lang}_${Date.now()}.txt`;
             label = 'Translated summary';
         }
 
-        if (text) {
+        if (!text) {
+            this.showToast('No text available to export', 'error');
+            return;
+        }
+
+        const baseName = (this.currentData?.filename || 'file').replace(/\.[^.]+$/, '');
+        const langSuffix = (type.startsWith('translated')) ? `_${this.lastTranslatedLang || 'translated'}` : '';
+        const filename = `${baseName}_${type}${langSuffix}.${format}`;
+
+        if (format === 'txt') {
             const blob = new Blob([text], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1115,11 +1190,23 @@ class ResultsPage {
             a.download = filename;
             a.click();
             URL.revokeObjectURL(url);
-
-            this.showToast(`${label.charAt(0).toUpperCase() + label.slice(1)} exported`, 'success');
+            this.showToast(`${label.charAt(0).toUpperCase() + label.slice(1)} exported as TXT`, 'success');
         } else {
-            this.showToast('No text available to export', 'error');
+            // For non-TXT formats on translated content, still export as TXT with a note
+            this.showToast(`${format.toUpperCase()} export for translated content is only available as TXT`, 'info');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename.replace(`.${format}`, '.txt');
+            a.click();
+            URL.revokeObjectURL(url);
         }
+    }
+
+    exportText(type) {
+        // Legacy method - redirect to new format export with txt
+        this.exportInFormat(type, 'txt');
     }
 
     // Utility Methods

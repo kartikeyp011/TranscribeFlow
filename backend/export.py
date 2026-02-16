@@ -6,47 +6,83 @@ from reportlab.lib.styles import getSampleStyleSheet
 from docx import Document
 import pysrt
 
-def export_txt(transcript: str, summary: str, filename: str) -> bytes:
+def export_txt(transcript: str, summary: str, filename: str, content: str = "both") -> bytes:
     """Export as plain text"""
-    content = f"Transcript: {filename}\n\n"
-    content += f"SUMMARY:\n{summary}\n\n"
-    content += f"FULL TRANSCRIPT:\n{transcript}"
-    return content.encode('utf-8')
+    parts = []
+    
+    if content == "transcript":
+        parts.append(f"Transcript: {filename}\n")
+        if transcript:
+            parts.append(f"FULL TRANSCRIPT:\n{transcript}")
+    elif content == "summary":
+        parts.append(f"Summary: {filename}\n")
+        if summary:
+            parts.append(f"SUMMARY:\n{summary}")
+    else:  # both
+        parts.append(f"Transcript & Summary: {filename}\n")
+        if summary:
+            parts.append(f"SUMMARY:\n{summary}\n")
+        if transcript:
+            parts.append(f"FULL TRANSCRIPT:\n{transcript}")
+    
+    return "\n".join(parts).encode('utf-8')
 
-def export_pdf(transcript: str, summary: str, filename: str) -> bytes:
+def export_pdf(transcript: str, summary: str, filename: str, content: str = "both") -> bytes:
     """Export as PDF using reportlab"""
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     story = []
     styles = getSampleStyleSheet()
     
-    # Title
-    story.append(Paragraph(f"Transcript: {filename}", styles['Title']))
-    story.append(Spacer(1, 12))
-    
-    # Summary
-    story.append(Paragraph("SUMMARY:", styles['Heading2']))
-    story.append(Paragraph(summary, styles['Normal']))
-    story.append(Spacer(1, 12))
-    
-    # Transcript
-    story.append(Paragraph("FULL TRANSCRIPT:", styles['Heading2']))
-    story.append(Paragraph(transcript, styles['Normal']))
+    if content == "transcript":
+        story.append(Paragraph(f"Transcript: {filename}", styles['Title']))
+        story.append(Spacer(1, 12))
+        if transcript:
+            story.append(Paragraph("FULL TRANSCRIPT:", styles['Heading2']))
+            story.append(Paragraph(transcript, styles['Normal']))
+    elif content == "summary":
+        story.append(Paragraph(f"Summary: {filename}", styles['Title']))
+        story.append(Spacer(1, 12))
+        if summary:
+            story.append(Paragraph("SUMMARY:", styles['Heading2']))
+            story.append(Paragraph(summary, styles['Normal']))
+    else:  # both
+        story.append(Paragraph(f"Transcript & Summary: {filename}", styles['Title']))
+        story.append(Spacer(1, 12))
+        if summary:
+            story.append(Paragraph("SUMMARY:", styles['Heading2']))
+            story.append(Paragraph(summary, styles['Normal']))
+            story.append(Spacer(1, 12))
+        if transcript:
+            story.append(Paragraph("FULL TRANSCRIPT:", styles['Heading2']))
+            story.append(Paragraph(transcript, styles['Normal']))
     
     doc.build(story)
     buffer.seek(0)
     return buffer.read()
 
-def export_docx(transcript: str, summary: str, filename: str) -> bytes:
+def export_docx(transcript: str, summary: str, filename: str, content: str = "both") -> bytes:
     """Export as DOCX"""
     doc = Document()
-    doc.add_heading(f"Transcript: {filename}", 0)
     
-    doc.add_heading("Summary", level=1)
-    doc.add_paragraph(summary)
-    
-    doc.add_heading("Full Transcript", level=1)
-    doc.add_paragraph(transcript)
+    if content == "transcript":
+        doc.add_heading(f"Transcript: {filename}", 0)
+        if transcript:
+            doc.add_heading("Full Transcript", level=1)
+            doc.add_paragraph(transcript)
+    elif content == "summary":
+        doc.add_heading(f"Summary: {filename}", 0)
+        if summary:
+            doc.add_heading("Summary", level=1)
+            doc.add_paragraph(summary)
+    else:  # both
+        doc.add_heading(f"Transcript & Summary: {filename}", 0)
+        if summary:
+            doc.add_heading("Summary", level=1)
+            doc.add_paragraph(summary)
+        if transcript:
+            doc.add_heading("Full Transcript", level=1)
+            doc.add_paragraph(transcript)
     
     buffer = BytesIO()
     doc.save(buffer)
