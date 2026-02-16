@@ -45,6 +45,68 @@ from backend.security import (
 )
 from backend.schemas import UserCreate, UserLogin, Token
 
+# =====================================================
+# Content File Management
+# =====================================================
+
+CONTENT_DIR = "content_files"
+os.makedirs(CONTENT_DIR, exist_ok=True)
+
+def get_content_path(filename: str) -> str:
+    """Get absolute path for a content file"""
+    return os.path.join(CONTENT_DIR, filename)
+
+def save_content_file(data: dict) -> str:
+    """Save content data to a unique JSON file and return the filename"""
+    filename = f"{uuid.uuid4()}.json"
+    filepath = get_content_path(filename)
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return filename
+
+def read_content_file(filename: str) -> dict:
+    """Read content data from a JSON file"""
+    if not filename: return {}
+    filepath = get_content_path(filename)
+    if not os.path.exists(filepath): return {}
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading content file {filename}: {e}")
+        return {}
+
+# =====================================================
+# Content File Management
+# =====================================================
+
+CONTENT_DIR = "content_files"
+os.makedirs(CONTENT_DIR, exist_ok=True)
+
+def get_content_path(filename: str) -> str:
+    """Get absolute path for a content file"""
+    return os.path.join(CONTENT_DIR, filename)
+
+def save_content_file(data: dict) -> str:
+    """Save content data to a unique JSON file and return the filename"""
+    filename = f"{uuid.uuid4()}.json"
+    filepath = get_content_path(filename)
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return filename
+
+def read_content_file(filename: str) -> dict:
+    """Read content data from a JSON file"""
+    if not filename: return {}
+    filepath = get_content_path(filename)
+    if not os.path.exists(filepath): return {}
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading content file {filename}: {e}")
+        return {}
+
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -338,7 +400,18 @@ async def upload_audio(
     # Summarize (use the formatted transcript if diarization was used)
     summary = await run_in_threadpool(pipeline.summarize, formatted_transcript, summary_mode)
     
-    # Save to database
+    # Create content file data
+    content_data = {
+        "transcript": formatted_transcript,
+        "summary": summary,
+        "word_timestamps": word_timestamps,
+        "speaker_segments": speaker_segments,
+    }
+    
+    # Save content to file (NOT DB)
+    content_filename = save_content_file(content_data)
+
+    # Save metadata to database
     db_file = crud.create_file(
         db,
         schemas.FileCreate(
@@ -347,11 +420,8 @@ async def upload_audio(
             saved_as=safe_name,
             file_size_mb=round(len(content) / (1024 * 1024), 2),
             language=language,
-            transcript=formatted_transcript,  # ✅ Use formatted transcript
-            summary=summary,
+            content_file=content_filename,
             audio_url=f"/api/stream/{safe_name}",
-            word_timestamps=json.dumps(word_timestamps),
-            speaker_segments=json.dumps(speaker_segments) if speaker_segments else None
         ),
     )
 
@@ -362,8 +432,8 @@ async def upload_audio(
         "size": len(content),  # ✅ Add alias
         "file_size_mb": db_file.file_size_mb,  # ✅ Keep MB version
         "audio_url": db_file.audio_url,
-        "transcript": db_file.transcript,
-        "summary": db_file.summary,
+        "transcript": formatted_transcript,  # Return from memory since we just created it
+        "summary": summary,
         "language": language,  # ✅ Add language
         "created_at": db_file.created_at.isoformat(),  # ✅ Add timestamp
         "status": "success",
@@ -499,6 +569,15 @@ def process_audio_file(
         # Summarize
         summary = pipeline.summarize(formatted_transcript, summary_mode)
         
+        # Save to file (NOT DB)
+        content_data = {
+            "transcript": formatted_transcript,
+            "summary": summary,
+            "word_timestamps": word_timestamps,
+            "speaker_segments": speaker_segments,
+        }
+        content_filename = save_content_file(content_data)
+        
         # Save to DB
         file_create = schemas.FileCreate(
             user_id=user_id,
@@ -506,11 +585,8 @@ def process_audio_file(
             saved_as=safe_name,
             file_size_mb=round(file_size / (1024 * 1024), 2),
             language=language,
-            transcript=formatted_transcript,
-            summary=summary,
+            content_file=content_filename,
             audio_url=f"/api/stream/{safe_name}",
-            word_timestamps=json.dumps(word_timestamps),
-            speaker_segments=json.dumps(speaker_segments) if speaker_segments else None
         )
         
         db_file = crud.create_file(db, file_create)
@@ -655,17 +731,19 @@ async def get_user_files(
             {
                 "id": f.id,
                 "filename": f.filename,
-                "file_size": int(f.file_size_mb * 1024 * 1024) if f.file_size_mb else 0,  # ✅ Add in bytes
-                "size": int(f.file_size_mb * 1024 * 1024) if f.file_size_mb else 0,  # ✅ Add alias
+                "file_size": int(f.file_size_mb * 1024 * 1024) if f.file_size_mb else 0,
+                "size": int(f.file_size_mb * 1024 * 1024) if f.file_size_mb else 0,
                 "file_size_mb": f.file_size_mb,
-                "size_mb": f.file_size_mb,  # ✅ Add alias
+                "size_mb": f.file_size_mb,
                 "language": f.language,
                 "created_at": f.created_at.isoformat(),
                 "audio_url": f.audio_url,
-                "transcript": f.transcript,
-                "summary": f.summary,
                 "is_starred": f.is_starred,
-                "is_pinned": f.is_pinned
+                "is_pinned": f.is_pinned,
+                "content_file": f.content_file,
+                # Populate transcript/summary from content files
+                "transcript": read_content_file(f.content_file).get("transcript") if f.content_file else None,
+                "summary": read_content_file(f.content_file).get("summary") if f.content_file else None
             }
             for f in files
         ],
@@ -689,22 +767,36 @@ async def get_file(
     # Calculate file size in bytes from MB
     file_size_bytes = int(file.file_size_mb * 1024 * 1024) if file.file_size_mb else 0
     
+    # Read content from file
+    transcript = None
+    summary = None
+    word_timestamps = None
+    speaker_segments = None
+    
+    if file.content_file:
+        content = read_content_file(file.content_file)
+        transcript = content.get("transcript")
+        summary = content.get("summary")
+        word_timestamps = json.dumps(content.get("word_timestamps")) if content.get("word_timestamps") else None
+        speaker_segments = json.dumps(content.get("speaker_segments")) if content.get("speaker_segments") else None
+    
     return {
         "id": file.id,
         "filename": file.filename,
-        "file_size": file_size_bytes,  # ✅ Add this - in bytes
-        "size": file_size_bytes,  # ✅ Add this alias
-        "file_size_mb": file.file_size_mb,  # Keep for backwards compatibility
-        "size_mb": file.file_size_mb,  # ✅ Add this alias
+        "file_size": file_size_bytes,
+        "size": file_size_bytes,
+        "file_size_mb": file.file_size_mb,
+        "size_mb": file.file_size_mb,
         "language": file.language,
         "created_at": file.created_at.isoformat(),
         "audio_url": file.audio_url,
-        "transcript": file.transcript,
-        "summary": file.summary,
+        "transcript": transcript,
+        "summary": summary,
         "is_starred": file.is_starred,
         "is_pinned": file.is_pinned,
-        "word_timestamps": file.word_timestamps,
-        "speaker_segments": file.speaker_segments
+        "word_timestamps": word_timestamps,
+        "speaker_segments": speaker_segments,
+        "content_file": file.content_file
     }
 
 @app.delete("/api/files/{file_id}")
@@ -800,15 +892,26 @@ async def export_file(
     content = content.lower()
     
     # Determine what text to export based on content param
+    # Load content from file
+    transcript_text = ""
+    summary_text = ""
+    word_timestamps_data = None
+    
+    if file.content_file:
+        content_data = read_content_file(file.content_file)
+        transcript_text = content_data.get("transcript") or ""
+        summary_text = content_data.get("summary") or ""
+        word_timestamps_data = content_data.get("word_timestamps") # List or None
+
     if content == "transcript":
-        transcript_text = file.transcript or ""
+        # transcript_text already populated
         summary_text = ""
     elif content == "summary":
         transcript_text = ""
-        summary_text = file.summary or ""
+        # summary_text already populated
     else:  # both
-        transcript_text = file.transcript or ""
-        summary_text = file.summary or ""
+        # both already populated
+        pass
     
     if format == "txt":
         export_content = export_txt(transcript_text, summary_text, file.filename, content)
@@ -823,7 +926,9 @@ async def export_file(
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         extension = "docx"
     elif format == "srt":
-        export_content = export_srt(file.word_timestamps or "[]", file.transcript)
+        # Prepare word_timestamps as JSON string/list for export_srt
+        wt_input = json.dumps(word_timestamps_data) if word_timestamps_data else "[]"
+        export_content = export_srt(wt_input, transcript_text)
         media_type = "application/x-subrip"
         extension = "srt"
     else:
@@ -984,8 +1089,14 @@ async def get_dashboard_stats(
     recent_files = sorted(all_files, key=lambda f: f.created_at or datetime.min, reverse=True)[:20]
     word_counter = Counter()
     for f in recent_files:
-        if f.transcript:
-            words = re.findall(r'[a-zA-Z]{3,}', f.transcript.lower())
+        # Read transcript from content file
+        f_transcript = None
+        if f.content_file:
+            c_data = read_content_file(f.content_file)
+            f_transcript = c_data.get("transcript")
+        
+        if f_transcript:
+            words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
             word_counter.update(w for w in words if w not in STOP_WORDS)
 
     common_keywords = [word.title() for word, _ in word_counter.most_common(8)]
@@ -995,8 +1106,14 @@ async def get_dashboard_stats(
     neg_count = 0
     total_sentiment_words = 0
     for f in recent_files:
-        if f.transcript:
-            words = re.findall(r'[a-zA-Z]{3,}', f.transcript.lower())
+        # Read transcript from content file
+        f_transcript = None
+        if f.content_file:
+            c_data = read_content_file(f.content_file)
+            f_transcript = c_data.get("transcript")
+
+        if f_transcript:
+            words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
             for w in words:
                 if w in POSITIVE_WORDS:
                     pos_count += 1
@@ -1095,3 +1212,9 @@ async def serve_user():
     """Serve user profile page"""
     file_path = os.path.join(FRONTEND_DIR, "user.html")
     return FileResponse(file_path)
+
+# =====================================================
+# Maintenance
+# =====================================================
+
+

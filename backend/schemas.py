@@ -49,16 +49,15 @@ class FileBase(BaseModel):
 class FileCreate(FileBase):
     user_id: str
     saved_as: str
-    transcript: Optional[str] = None
-    summary: Optional[str] = None
+    content_file: Optional[str] = None   # Path to JSON content file on disk
     audio_url: Optional[str] = None
-    word_timestamps: Optional[str] = None
-    speaker_segments: Optional[str] = None
 
 class FileResponse(FileBase):
     id: str
     user_id: str
     saved_as: str
+    content_file: Optional[str] = None
+    # These are populated at runtime by reading the content file:
     transcript: Optional[str] = None
     summary: Optional[str] = None
     audio_url: Optional[str] = None
@@ -76,4 +75,3 @@ class UserStatsResponse(BaseModel):
     total_minutes: float
     recent_files_count: int
     account_created: datetime
-    word_timestamps: Optional[str] = None

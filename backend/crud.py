@@ -69,8 +69,7 @@ def get_user_files(
     
     if search:
         query = query.filter(
-            db_models.File.filename.contains(search) |
-            db_models.File.transcript.contains(search)
+            db_models.File.filename.contains(search)
         )
     
     return query.order_by(db_models.File.created_at.desc()).offset(skip).limit(limit).all()

@@ -43,3 +43,5 @@ models--pyannote--*
 # Ignore all .txt files in backend and frontend folders
 /backend/*.txt
 /frontend/*.txt
+
+content_files

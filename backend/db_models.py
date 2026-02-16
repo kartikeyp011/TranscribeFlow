@@ -27,13 +27,10 @@ class File(Base):
     saved_as = Column(String(500), nullable=False)  # Actual filename on disk
     file_size_mb = Column(Float)
     language = Column(String(10))
-    transcript = Column(Text)
-    summary = Column(Text)
+    content_file = Column(String(500), nullable=True)  # Path to JSON content file
     audio_url = Column(Text)
     duration_seconds = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     is_deleted = Column(Boolean, default=False)
-    word_timestamps = Column(Text, nullable=True)
-    speaker_segments = Column(Text, nullable=True)
     is_starred = Column(Boolean, default=False)
     is_pinned = Column(Boolean, default=False)
