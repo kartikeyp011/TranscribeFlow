@@ -42,6 +42,26 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
+def update_user_username(db: Session, user_id: str, new_username: str) -> Optional[db_models.User]:
+    """Update user's username"""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return None
+    user.username = new_username
+    db.commit()
+    db.refresh(user)
+    return user
+
+def update_user_password(db: Session, user_id: str, new_hashed_password: str) -> Optional[db_models.User]:
+    """Update user's hashed password"""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return None
+    user.hashed_password = new_hashed_password
+    db.commit()
+    db.refresh(user)
+    return user
+
 # =====================
 # FILE OPERATIONS
 # =====================

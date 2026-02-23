@@ -247,6 +247,7 @@
 
             <!-- Transcript Column -->
             <div class="results-column transcript-column">
+              <!-- Transcript Card -->
               <div class="dashboard-card full-height">
                 <div class="card-header">
                   <div class="card-icon">
@@ -397,8 +398,8 @@
                 </div>
               </div>
 
-              <!-- Translated Transcript (separate box) -->
-              <div id="translatedTranscriptCard" class="dashboard-card hidden">
+              <!-- Translated Transcript Card -->
+              <div id="translatedTranscriptCard" class="dashboard-card full-height hidden">
                 <div class="card-header">
                   <div class="card-icon">
                     <i class="fas fa-language"></i>
@@ -449,6 +450,16 @@
                         <p>Translation will appear here</p>
                       </div>
                     </div>
+
+                    <div class="content-footer">
+                      <div class="footer-info">
+                        <i class="fas fa-language"></i>
+                        <span>Translated transcript</span>
+                      </div>
+                      <div class="footer-tools">
+                        <span class="confidence-badge">Translated</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -456,6 +467,7 @@
 
             <!-- Summary Column -->
             <div class="results-column summary-column">
+              <!-- Summary Card -->
               <div class="dashboard-card full-height">
                 <div class="card-header">
                   <div class="card-icon">
@@ -518,8 +530,8 @@
                 </div>
               </div>
 
-              <!-- Translated Summary (separate box) -->
-              <div id="translatedSummaryCard" class="dashboard-card hidden">
+              <!-- Translated Summary Card -->
+              <div id="translatedSummaryCard" class="dashboard-card full-height hidden">
                 <div class="card-header">
                   <div class="card-icon">
                     <i class="fas fa-language"></i>
@@ -567,13 +579,21 @@
                         <p>Translation will appear here</p>
                       </div>
                     </div>
+
+                    <div class="content-footer">
+                      <div class="footer-info">
+                        <i class="fas fa-robot"></i>
+                        <span>AI-generated translated summary</span>
+                      </div>
+                      <div class="footer-tools">
+                        <span class="confidence-badge">Translated</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
-
         </div>
       </div>
     </main>
@@ -584,7 +604,6 @@
     <!-- Footer -->
     <footer class="premium-footer">
       <div class="footer-container">
-
         <div class="footer-bottom">
           <div class="copyright">
             © 2026 TranscribeFlow. All rights reserved.

@@ -43,7 +43,7 @@ from backend.security import (
     create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
-from backend.schemas import UserCreate, UserLogin, Token
+from backend.schemas import UserCreate, UserLogin, Token, UpdateUsername, ChangePassword
 
 # =====================================================
 # Constants & Configuration
@@ -330,6 +330,55 @@ async def get_current_user_info(current_user = Depends(get_current_user)):
 async def logout():
     """Logout (client should delete token)"""
     return {"message": "Successfully logged out. Please delete your token."}
+
+@app.put("/api/auth/update-username")
+async def update_username(
+    payload: UpdateUsername,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Update the current user's username"""
+    new_username = payload.new_username.strip()
+
+    # Validate length
+    if len(new_username) < 3:
+        raise HTTPException(400, "Username must be at least 3 characters")
+
+    # Check uniqueness
+    existing = crud.get_user_by_username(db, new_username)
+    if existing and existing.id != current_user.id:
+        raise HTTPException(400, "Username already taken")
+
+    updated = crud.update_user_username(db, current_user.id, new_username)
+    if not updated:
+        raise HTTPException(404, "User not found")
+
+    logger.info(f"✅ Username updated for user {current_user.id}")
+    return {"message": "Username updated successfully", "username": updated.username}
+
+@app.put("/api/auth/change-password")
+async def change_password(
+    payload: ChangePassword,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Change the current user's password"""
+    # Verify current password
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(400, "Current password is incorrect")
+
+    # Validate new password length
+    if len(payload.new_password) < 6:
+        raise HTTPException(400, "New password must be at least 6 characters")
+
+    # Hash and save
+    new_hash = hash_password(payload.new_password)
+    updated = crud.update_user_password(db, current_user.id, new_hash)
+    if not updated:
+        raise HTTPException(404, "User not found")
+
+    logger.info(f"✅ Password changed for user {current_user.id}")
+    return {"message": "Password changed successfully"}
 
 # =====================================================
 # File Upload & Processing
@@ -1271,6 +1320,10 @@ def get_dashboard_stats(
             "sentiment": {"positive": 34, "neutral": 33, "negative": 33},
             "productivity_score": 0,
         }
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/favicon.ico")
 
 # =====================================================
 # Frontend Routes (No Auth Check)

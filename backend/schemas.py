@@ -20,6 +20,13 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class UpdateUsername(BaseModel):
+    new_username: str
+
+class ChangePassword(BaseModel):
+    current_password: str
+    new_password: str
+
 class UserResponse(BaseModel):
     id: str
     username: str
