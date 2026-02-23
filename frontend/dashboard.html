@@ -18,13 +18,21 @@
 <body>
     <div class="app-container">
 
+        <!-- Ambient Background Effects -->
+        <div class="ambient-grid"></div>
+        <div class="floating-particles" id="particles"></div>
+
         <!-- Main Content -->
         <main class="main-content">
 
-            <!-- ===== Page Header ===== -->
-            <section class="dash-header">
+            <!-- ===== Page Header with Parallax ===== -->
+            <section class="dash-header" id="dashHeader">
                 <div class="dash-container">
                     <div class="dash-header-content">
+                        <div class="header-badge">
+                            <span class="badge-pulse"></span>
+                            <span class="badge-text">Live Dashboard</span>
+                        </div>
                         <h1 class="dash-title">
                             <span class="title-gradient">Dashboard</span>
                         </h1>
@@ -38,10 +46,10 @@
                 <div class="dash-container">
                     <div class="dash-grid">
 
-                        <!-- ──────────── QUICK ACTIONS ──────────── -->
-                        <div class="dash-card card-animate" data-delay="0">
+                        <!-- ──────────── QUICK ACTIONS with Magnetic Effect ──────────── -->
+                        <div class="dash-card card-animate magnetic-card" data-delay="0" data-tilt>
                             <div class="dash-card-header">
-                                <div class="dash-card-icon">
+                                <div class="dash-card-icon pulse-icon">
                                     <i class="fas fa-bolt"></i>
                                 </div>
                                 <h2 class="dash-card-title">Quick Actions</h2>
@@ -49,9 +57,10 @@
                             <div class="dash-card-body">
                                 <div class="actions-grid">
                                     <!-- Upload New Audio -->
-                                    <div class="action-card" id="actionUpload">
+                                    <div class="action-card magnetic-element" id="actionUpload">
                                         <div class="action-icon">
                                             <i class="fas fa-cloud-upload-alt"></i>
+                                            <div class="icon-ripple"></div>
                                         </div>
                                         <div class="action-info">
                                             <h3>Upload New Audio</h3>
@@ -60,9 +69,10 @@
                                         <i class="fas fa-arrow-right action-arrow"></i>
                                     </div>
                                     <!-- Go to History -->
-                                    <div class="action-card" id="actionHistory">
+                                    <div class="action-card magnetic-element" id="actionHistory">
                                         <div class="action-icon history">
                                             <i class="fas fa-history"></i>
+                                            <div class="icon-ripple"></div>
                                         </div>
                                         <div class="action-info">
                                             <h3>Go to History</h3>
@@ -74,34 +84,37 @@
                             </div>
                         </div>
 
-                        <!-- ──────────── USAGE SNAPSHOT ──────────── -->
+                        <!-- ──────────── USAGE SNAPSHOT with Liquid Fill ──────────── -->
                         <div class="dash-card card-animate" data-delay="1">
                             <div class="dash-card-header">
                                 <div class="dash-card-icon">
                                     <i class="fas fa-chart-bar"></i>
+                                    <div class="icon-ring"></div>
                                 </div>
                                 <h2 class="dash-card-title">Usage Snapshot</h2>
                             </div>
                             <div class="dash-card-body">
                                 <div class="stats-mini-grid">
-                                    <!-- Minutes Transcribed -->
-                                    <div class="stat-mini">
+                                    <!-- Minutes Transcribed with Sparkline -->
+                                    <div class="stat-mini hover-lift" data-stat="minutes">
                                         <div class="stat-mini-value counter" id="statMinutes">0</div>
                                         <div class="stat-mini-label">Total Minutes</div>
                                         <div class="stat-mini-trend" id="trendMinutes">
                                             <i class="fas fa-minus"></i> —
                                         </div>
+                                        <div class="stat-sparkline" id="sparklineMinutes"></div>
                                     </div>
                                     <!-- Files Processed -->
-                                    <div class="stat-mini">
+                                    <div class="stat-mini hover-lift" data-stat="files">
                                         <div class="stat-mini-value counter" id="statFiles">0</div>
                                         <div class="stat-mini-label">Files Processed</div>
                                         <div class="stat-mini-trend" id="trendFiles">
                                             <i class="fas fa-minus"></i> —
                                         </div>
+                                        <div class="stat-sparkline" id="sparklineFiles"></div>
                                     </div>
                                     <!-- Most Used Language -->
-                                    <div class="stat-mini">
+                                    <div class="stat-mini hover-lift">
                                         <div class="stat-mini-value lang-value" id="statLanguage">—</div>
                                         <div class="stat-mini-label">Most Used Language</div>
                                         <div class="stat-mini-trend stable">
@@ -109,7 +122,7 @@
                                         </div>
                                     </div>
                                     <!-- Audio Duration Frequency -->
-                                    <div class="stat-mini">
+                                    <div class="stat-mini hover-lift">
                                         <div class="stat-mini-value counter" id="statAvgDuration">0</div>
                                         <div class="stat-mini-label">Avg Duration (min)</div>
                                         <div class="stat-mini-trend stable">
@@ -118,74 +131,119 @@
                                     </div>
                                 </div>
 
-                                <!-- Progress Bar -->
-                                <div class="usage-progress">
+                                <!-- Progress Bar with Liquid Effect -->
+                                <div class="usage-progress liquid-container">
                                     <div class="progress-label">
                                         <span>Weekly Quota Used</span>
                                         <span class="progress-value" id="quotaPercent">0%</span>
                                     </div>
-                                    <div class="progress-track">
-                                        <div class="progress-fill-bar" id="quotaBar"></div>
+                                    <div class="progress-track liquid-track">
+                                        <div class="progress-fill-bar liquid-fill" id="quotaBar">
+                                            <div class="liquid-wave"></div>
+                                            <div class="liquid-wave wave2"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ──────────── AI INSIGHTS ──────────── -->
+                        <!-- ──────────── STARRED FILES with Parallax ──────────── -->
                         <div class="dash-card card-full card-animate" data-delay="2">
                             <div class="dash-card-header">
-                                <div class="dash-card-icon">
+                                <div class="dash-card-icon floating-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <h2 class="dash-card-title">Recent Starred Files</h2>
+                            </div>
+                            <div class="dash-card-body">
+                                <div id="starredFilesLoader" class="loading-placeholder shimmer">
+                                    <i class="fas fa-circle-notch fa-spin"></i> Loading...
+                                </div>
+                                <div id="starredFilesContainer" class="files-grid hidden">
+                                    <!-- Starred files populated via JS -->
+                                </div>
+                                <div id="starredEmptyState" class="empty-placeholder hidden">
+                                    <div class="empty-illustration">
+                                        <i class="far fa-star"></i>
+                                        <div class="floating-stars"></div>
+                                    </div>
+                                    <p>No starred files yet</p>
+                                    <button class="btn-outline-sm" onclick="window.location.href='/upload'">
+                                        <i class="fas fa-cloud-upload-alt"></i> Upload Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ──────────── AI INSIGHTS with Advanced Animations ──────────── -->
+                        <div class="dash-card card-full card-animate" data-delay="2">
+                            <div class="dash-card-header">
+                                <div class="dash-card-icon brain-pulse">
                                     <i class="fas fa-brain"></i>
                                 </div>
                                 <h2 class="dash-card-title">AI Insights</h2>
+                                <div class="live-indicator">
+                                    <span class="live-dot"></span>
+                                    <span class="live-text">Live</span>
+                                </div>
                             </div>
                             <div class="dash-card-body">
                                 <div class="insights-grid">
 
-                                    <!-- 1) Common Topics -->
+                                    <!-- 1) Common Topics with Floating Tags -->
                                     <div class="insight-section">
-                                        <h3 class="insight-label">Common Topics</h3>
+                                        <h3 class="insight-label">
+                                            <i class="fas fa-tags"></i> Common Topics
+                                        </h3>
                                         <div class="tag-chips" id="topicsContainer">
-                                            <span class="tag-chip" style="opacity:0.5">Loading…</span>
+                                            <span class="tag-chip loading-chip">Loading…</span>
                                         </div>
                                     </div>
 
-                                    <!-- 2) Sentiment Trend -->
+                                    <!-- 2) Sentiment Trend with Animated Bars -->
                                     <div class="insight-section">
-                                        <h3 class="insight-label">Sentiment Trend</h3>
+                                        <h3 class="insight-label">
+                                            <i class="fas fa-chart-line"></i> Sentiment Trend
+                                        </h3>
                                         <div class="sentiment-bars" id="sentimentContainer">
-                                            <div class="sentiment-row">
+                                            <div class="sentiment-row hover-glow">
                                                 <span class="sentiment-label">Positive</span>
                                                 <div class="sentiment-track">
-                                                    <div class="sentiment-fill positive" id="sentimentPosBar" style="--bar-width: 0%"></div>
+                                                    <div class="sentiment-fill positive wave-bg" id="sentimentPosBar"
+                                                        style="--bar-width: 0%"></div>
                                                 </div>
                                                 <span class="sentiment-pct" id="sentimentPosPct">0%</span>
                                             </div>
-                                            <div class="sentiment-row">
+                                            <div class="sentiment-row hover-glow">
                                                 <span class="sentiment-label">Neutral</span>
                                                 <div class="sentiment-track">
-                                                    <div class="sentiment-fill neutral" id="sentimentNeuBar" style="--bar-width: 0%"></div>
+                                                    <div class="sentiment-fill neutral wave-bg" id="sentimentNeuBar"
+                                                        style="--bar-width: 0%"></div>
                                                 </div>
                                                 <span class="sentiment-pct" id="sentimentNeuPct">0%</span>
                                             </div>
-                                            <div class="sentiment-row">
+                                            <div class="sentiment-row hover-glow">
                                                 <span class="sentiment-label">Negative</span>
                                                 <div class="sentiment-track">
-                                                    <div class="sentiment-fill negative" id="sentimentNegBar" style="--bar-width: 0%"></div>
+                                                    <div class="sentiment-fill negative wave-bg" id="sentimentNegBar"
+                                                        style="--bar-width: 0%"></div>
                                                 </div>
                                                 <span class="sentiment-pct" id="sentimentNegPct">0%</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- 3) Productivity Score -->
+                                    <!-- 3) Productivity Score with Particle Ring -->
                                     <div class="insight-section center">
-                                        <h3 class="insight-label">Productivity Score</h3>
-                                        <div class="circular-progress" id="productivityRing">
+                                        <h3 class="insight-label">
+                                            <i class="fas fa-tachometer-alt"></i> Productivity Score
+                                        </h3>
+                                        <div class="circular-progress particle-ring" id="productivityRing">
                                             <div class="circular-inner">
                                                 <span class="circular-value" id="productivityValue">0</span>
                                                 <span class="circular-unit">%</span>
                                             </div>
+                                            <canvas class="particle-canvas" id="particleCanvas"></canvas>
                                         </div>
                                         <p class="insight-hint">Based on this week's activity</p>
                                     </div>
@@ -200,22 +258,25 @@
 
         </main>
 
-        <!-- ===== Floating Chatbot ===== -->
-        <!-- Toggle Button -->
-        <button class="chatbot-toggle" id="chatbotToggle" aria-label="Open chat assistant">
+        <!-- ===== Enhanced Floating Chatbot ===== -->
+        <!-- Toggle Button with Pulse -->
+        <button class="chatbot-toggle breathing" id="chatbotToggle" aria-label="Open chat assistant">
             <i class="fas fa-comment-dots chatbot-toggle-icon" id="chatbotIcon"></i>
+            <span class="toggle-ring"></span>
         </button>
 
-        <!-- Chat Window -->
-        <div class="chatbot-window" id="chatbotWindow">
+        <!-- Chat Window with Glass Effect -->
+        <div class="chatbot-window glass-effect" id="chatbotWindow">
             <div class="chatbot-header">
                 <div class="chatbot-header-info">
-                    <div class="chatbot-avatar">
+                    <div class="chatbot-avatar typing-animation">
                         <i class="fas fa-robot"></i>
                     </div>
                     <div>
                         <h3>TranscribeFlow Assistant</h3>
-                        <span class="chatbot-status">Online</span>
+                        <span class="chatbot-status">
+                            <span class="status-dot"></span> Online
+                        </span>
                     </div>
                 </div>
                 <button class="chatbot-close" id="chatbotClose" aria-label="Close chat">
@@ -224,28 +285,39 @@
             </div>
             <div class="chatbot-messages" id="chatbotMessages">
                 <div class="chat-msg bot">
-                    <div class="chat-bubble">Hi there! 👋 How can I help you today?</div>
+                    <div class="chat-bubble slide-in">Hi there! 👋 How can I help you today?</div>
                 </div>
             </div>
             <div class="chatbot-input-area">
+                <div class="suggestions-carousel" id="suggestionsCarousel">
+                    <button class="suggestion-chip">Upload file</button>
+                    <button class="suggestion-chip">View history</button>
+                    <button class="suggestion-chip">Export transcript</button>
+                    <button class="suggestion-chip">Help me</button>
+                </div>
                 <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Type a message…"
                     autocomplete="off">
                 <button class="chatbot-send" id="chatbotSend" aria-label="Send message">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+            <div class="typing-indicator hidden" id="typingIndicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer with Parallax -->
         <footer class="premium-footer">
             <div class="footer-bottom">
                 <div class="copyright">
                     © 2026 TranscribeFlow. All rights reserved.
                 </div>
                 <div class="footer-legal">
-                    <a href="/privacy" class="legal-link">Privacy</a>
-                    <a href="/terms" class="legal-link">Terms</a>
-                    <a href="/security" class="legal-link">Security</a>
+                    <a href="/privacy" class="legal-link hover-underline">Privacy</a>
+                    <a href="/terms" class="legal-link hover-underline">Terms</a>
+                    <a href="/security" class="legal-link hover-underline">Security</a>
                 </div>
             </div>
         </footer>

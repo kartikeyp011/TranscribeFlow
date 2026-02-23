@@ -51,6 +51,7 @@ class FileCreate(FileBase):
     saved_as: str
     content_file: Optional[str] = None   # Path to JSON content file on disk
     audio_url: Optional[str] = None
+    duration_seconds: Optional[float] = None
 
 class FileResponse(FileBase):
     id: str

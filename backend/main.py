@@ -46,6 +46,44 @@ from backend.security import (
 from backend.schemas import UserCreate, UserLogin, Token
 
 # =====================================================
+# Constants & Configuration
+# =====================================================
+
+STOP_WORDS = {
+    'the', 'a', 'an', 'and', 'but', 'or', 'if', 'then', 'else', 'when',
+    'at', 'from', 'by', 'on', 'off', 'for', 'in', 'out', 'over', 'to',
+    'into', 'with', 'about', 'against', 'between', 'through', 'during',
+    'before', 'after', 'above', 'below', 'up', 'down', 'under', 'again',
+    'further', 'once', 'here', 'there', 'where', 'why', 'how', 'all',
+    'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such',
+    'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very',
+    's', 't', 'can', 'will', 'just', 'don', 'should', 'now', 'd', 'll',
+    'm', 'o', 're', 've', 'y', 'is', 'are', 'was', 'were', 'be', 'been',
+    'being', 'have', 'has', 'had', 'do', 'does', 'did', 'but', 'at', 'by',
+    'with', 'from', 'here', 'when', 'where', 'how', 'all', 'any', 'both',
+    'each', 'few', 'more', 'some', 'such', 'no', 'nor', 'too', 'very',
+    'can', 'will', 'just', 'should', 'now'
+}
+
+POSITIVE_WORDS = {
+    'good', 'great', 'awesome', 'excellent', 'happy', 'love', 'wonderful',
+    'best', 'better', 'success', 'successful', 'win', 'winner', 'gain',
+    'positive', 'benefit', 'beautiful', 'perfect', 'smart', 'intelligent',
+    'easy', 'efficient', 'nice', 'cool', 'amazing', 'fantastic', 'joy',
+    'fun', 'exciting', 'glad', 'proud', 'confident', 'optimistic', 'creative',
+    'effective', 'productive', 'helpful', 'valuable', 'profitable', 'rewarding'
+}
+
+NEGATIVE_WORDS = {
+    'bad', 'terrible', 'awful', 'worst', 'worse', 'fail', 'failure',
+    'lose', 'loser', 'loss', 'negative', 'problem', 'error', 'issue',
+    'mistake', 'wrong', 'difficult', 'inefficient', 'sad', 'hate',
+    'anger', 'angry', 'frustrated', 'annoyed', 'upset', 'disappointed',
+    'boring', 'useless', 'waste', 'hurt', 'pain', 'danger', 'risk',
+    'risky', 'concern', 'worried', 'stress', 'crisis', 'crash', 'broken'
+}
+
+# =====================================================
 # Content File Management
 # =====================================================
 
@@ -80,32 +118,7 @@ def read_content_file(filename: str) -> dict:
 # Content File Management
 # =====================================================
 
-CONTENT_DIR = "content_files"
-os.makedirs(CONTENT_DIR, exist_ok=True)
 
-def get_content_path(filename: str) -> str:
-    """Get absolute path for a content file"""
-    return os.path.join(CONTENT_DIR, filename)
-
-def save_content_file(data: dict) -> str:
-    """Save content data to a unique JSON file and return the filename"""
-    filename = f"{uuid.uuid4()}.json"
-    filepath = get_content_path(filename)
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    return filename
-
-def read_content_file(filename: str) -> dict:
-    """Read content data from a JSON file"""
-    if not filename: return {}
-    filepath = get_content_path(filename)
-    if not os.path.exists(filepath): return {}
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error reading content file {filename}: {e}")
-        return {}
 
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -187,6 +200,18 @@ from backend import db_models  # Import models so they're registered
 # Create all tables
 Base.metadata.create_all(bind=engine)
 logger.info("✅ Database tables created/verified")
+
+# ── Migrate: add duration_seconds column if missing ──────────────
+from sqlalchemy import inspect as sa_inspect, text as sa_text
+insp = sa_inspect(engine)
+if "files" in insp.get_table_names():
+    existing_cols = {c["name"] for c in insp.get_columns("files")}
+    if "duration_seconds" not in existing_cols:
+        with engine.begin() as conn:
+            conn.execute(sa_text("ALTER TABLE files ADD COLUMN duration_seconds FLOAT NULL"))
+        logger.info("✅ Migrated: added duration_seconds column to files table")
+    else:
+        logger.info("✅ duration_seconds column already exists")
 
 # Create FastAPI app
 app = FastAPI(
@@ -578,6 +603,13 @@ def process_audio_file(
         }
         content_filename = save_content_file(content_data)
         
+        # Calculate audio duration from transcript segments
+        duration_seconds = None
+        if transcript_segments:
+            duration_seconds = max(seg.get("end", 0) for seg in transcript_segments)
+        elif word_timestamps:
+            duration_seconds = max(w.get("end", 0) for w in word_timestamps)
+        
         # Save to DB
         file_create = schemas.FileCreate(
             user_id=user_id,
@@ -587,6 +619,7 @@ def process_audio_file(
             language=language,
             content_file=content_filename,
             audio_url=f"/api/stream/{safe_name}",
+            duration_seconds=duration_seconds,
         )
         
         db_file = crud.create_file(db, file_create)
@@ -703,6 +736,7 @@ async def get_user_files(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
+    include_content: bool = True,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -714,8 +748,7 @@ async def get_user_files(
     
     if search:
         query = query.filter(
-            db_models.File.filename.contains(search) |
-            db_models.File.transcript.contains(search)
+            db_models.File.filename.contains(search)
         )
     
     # Sort by pinned first, then by created date
@@ -726,9 +759,14 @@ async def get_user_files(
     
     total = crud.get_user_file_count(db, current_user.id)
     
-    return {
-        "files": [
-            {
+    # Process files - optimize by skipping content read if not requested
+    result_files = []
+    
+    if include_content:
+        # If including content, read synchronously or defer (simple loop here)
+        for f in files:
+            c_data = read_content_file(f.content_file) if f.content_file else {}
+            result_files.append({
                 "id": f.id,
                 "filename": f.filename,
                 "file_size": int(f.file_size_mb * 1024 * 1024) if f.file_size_mb else 0,
@@ -741,15 +779,55 @@ async def get_user_files(
                 "is_starred": f.is_starred,
                 "is_pinned": f.is_pinned,
                 "content_file": f.content_file,
-                # Populate transcript/summary from content files
-                "transcript": read_content_file(f.content_file).get("transcript") if f.content_file else None,
-                "summary": read_content_file(f.content_file).get("summary") if f.content_file else None
-            }
-            for f in files
-        ],
+                "transcript": c_data.get("transcript"),
+                "summary": c_data.get("summary")
+            })
+    else:
+        # Faster path without file I/O
+        for f in files:
+            result_files.append({
+                "id": f.id,
+                "filename": f.filename,
+                "file_size": int(f.file_size_mb * 1024 * 1024) if f.file_size_mb else 0,
+                "size": int(f.file_size_mb * 1024 * 1024) if f.file_size_mb else 0,
+                "file_size_mb": f.file_size_mb,
+                "size_mb": f.file_size_mb,
+                "language": f.language,
+                "created_at": f.created_at.isoformat(),
+                "audio_url": f.audio_url,
+                "is_starred": f.is_starred,
+                "is_pinned": f.is_pinned,
+                "content_file": f.content_file,
+                "transcript": None,
+                "summary": None
+            })
+    
+    return {
+        "files": result_files,
         "total": total,
         "skip": skip,
         "limit": limit
+    }
+
+@app.get("/api/files/starred")
+async def get_starred_files(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get all starred files"""
+    files = crud.get_starred_files(db, current_user.id)
+    
+    return {
+        "files": [
+            {
+                "id": f.id,
+                "filename": f.filename,
+                "is_starred": f.is_starred,
+                "is_pinned": f.is_pinned,
+                "created_at": f.created_at.isoformat()
+            }
+            for f in files
+        ]
     }
 
 @app.get("/api/files/{file_id}")
@@ -848,27 +926,6 @@ async def pin_file(
         raise HTTPException(404, "File not found")
     
     return {"message": "File pinned" if pinned else "File unpinned"}
-
-@app.get("/api/files/starred")
-async def get_starred_files(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """Get all starred files"""
-    files = crud.get_starred_files(db, current_user.id)
-    
-    return {
-        "files": [
-            {
-                "id": f.id,
-                "filename": f.filename,
-                "is_starred": f.is_starred,
-                "is_pinned": f.is_pinned,
-                "created_at": f.created_at.isoformat()
-            }
-            for f in files
-        ]
-    }
 
 # =====================================================
 # Export
@@ -996,7 +1053,7 @@ NEGATIVE_WORDS = {
 }
 
 @app.get("/api/dashboard/stats")
-async def get_dashboard_stats(
+def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -1007,16 +1064,198 @@ async def get_dashboard_stats(
 
     user_id = current_user.id
 
-    # ── Base query: all non-deleted files for this user ──────────
-    base = db.query(db_models.File).filter(
-        db_models.File.user_id == user_id,
-        db_models.File.is_deleted == False
-    )
+    try:
+        # ── Base query: all non-deleted files for this user ──────────
+        base = db.query(db_models.File).filter(
+            db_models.File.user_id == user_id,
+            db_models.File.is_deleted == False
+        )
 
-    all_files = base.all()
-    total_files = len(all_files)
+        all_files = base.all()
+        total_files = len(all_files)
 
-    if total_files == 0:
+        if total_files == 0:
+            return {
+                "total_files": 0,
+                "total_minutes": 0,
+                "avg_duration_min": 0,
+                "most_used_language": "—",
+                "total_storage_mb": 0,
+                "weekly_files": 0,
+                "weekly_minutes": 0,
+                "files_trend_pct": 0,
+                "minutes_trend_pct": 0,
+                "quota_pct": 0,
+                "common_keywords": [],
+                "sentiment": {"positive": 34, "neutral": 33, "negative": 33},
+                "productivity_score": 0,
+            }
+
+        # ── Backfill duration_seconds for files that don't have it ────
+        for f in all_files:
+            if f.duration_seconds is None and f.content_file:
+                try:
+                    c_data = read_content_file(f.content_file)
+                    segments = c_data.get("word_timestamps") or []
+                    if segments:
+                        max_end = max(seg.get("end", 0) for seg in segments)
+                        if max_end > 0:
+                            f.duration_seconds = max_end
+                            db.add(f)
+                except Exception:
+                    pass  # Skip files with missing/corrupt content
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+
+        # ── Basic aggregates ─────────────────────────────────────────
+        total_storage_mb = sum(f.file_size_mb or 0 for f in all_files)
+
+        # Duration: use duration_seconds if available, else estimate ~1 min per MB
+        total_seconds = sum(
+            f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
+            for f in all_files
+        )
+        total_minutes = round(total_seconds / 60, 1)
+        avg_duration_min = round(total_minutes / total_files, 1) if total_files else 0
+
+        # Most used language
+        lang_counts = Counter(f.language for f in all_files if f.language)
+        most_used_language = lang_counts.most_common(1)[0][0] if lang_counts else "—"
+
+        # ── Weekly stats (last 7 days vs prior 7 days) ───────────────
+        now = datetime.utcnow()
+        week_ago = now - timedelta(days=7)
+        two_weeks_ago = now - timedelta(days=14)
+
+        # After (safe):
+        this_week = []
+        for f in all_files:
+            try:
+                if f.created_at:
+                    ca = f.created_at.replace(tzinfo=None) if f.created_at.tzinfo else f.created_at
+                    if ca >= week_ago:
+                        this_week.append(f)
+            except Exception:
+                pass
+            
+            last_week = [f for f in all_files if f.created_at and two_weeks_ago <= f.created_at.replace(tzinfo=None) < week_ago]
+
+        weekly_files = len(this_week)
+        weekly_seconds = sum(
+            f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
+            for f in this_week
+        )
+        weekly_minutes = round(weekly_seconds / 60, 1)
+
+        last_week_files = len(last_week)
+        last_week_seconds = sum(
+            f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
+            for f in last_week
+        )
+
+        # Trend percentages
+        files_trend_pct = 0
+        if last_week_files > 0:
+            files_trend_pct = round(((weekly_files - last_week_files) / last_week_files) * 100)
+        elif weekly_files > 0:
+            files_trend_pct = 100
+
+        minutes_trend_pct = 0
+        if last_week_seconds > 0:
+            minutes_trend_pct = round(((weekly_seconds - last_week_seconds) / last_week_seconds) * 100)
+        elif weekly_seconds > 0:
+            minutes_trend_pct = 100
+
+        # Quota: weekly files as % of total (capped at 100)
+        quota_pct = min(round((weekly_files / max(total_files, 1)) * 100), 100)
+
+        # ── Common keywords from recent transcripts ──────────────────
+        recent_files = sorted(all_files, key=lambda f: f.created_at or datetime.min, reverse=True)[:20]
+        word_counter = Counter()
+        for f in recent_files:
+            # Read transcript from content file
+            f_transcript = None
+            if f.content_file:
+                try:
+                    c_data = read_content_file(f.content_file)
+                    f_transcript = c_data.get("transcript")
+                except Exception:
+                    pass
+            
+            if f_transcript:
+                words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
+                word_counter.update(w for w in words if w not in STOP_WORDS)
+
+        common_keywords = [word.title() for word, _ in word_counter.most_common(8)]
+
+        # ── Sentiment heuristic ──────────────────────────────────────
+        pos_count = 0
+        neg_count = 0
+        total_sentiment_words = 0
+        for f in recent_files:
+            # Read transcript from content file
+            f_transcript = None
+            if f.content_file:
+                try:
+                    c_data = read_content_file(f.content_file)
+                    f_transcript = c_data.get("transcript")
+                except Exception:
+                    pass
+
+            if f_transcript:
+                words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
+                for w in words:
+                    if w in POSITIVE_WORDS:
+                        pos_count += 1
+                        total_sentiment_words += 1
+                    elif w in NEGATIVE_WORDS:
+                        neg_count += 1
+                        total_sentiment_words += 1
+
+        if total_sentiment_words > 0:
+            pos_pct = round((pos_count / total_sentiment_words) * 100)
+            neg_pct = round((neg_count / total_sentiment_words) * 100)
+            neu_pct = 100 - pos_pct - neg_pct
+        else:
+            pos_pct, neu_pct, neg_pct = 34, 33, 33
+
+        # ── Productivity score ───────────────────────────────────────
+        # Composite: base = weekly_files * 10, capped at 100
+        # Bonus for streaks (any activity in each of last 7 days?)
+        active_days = set()
+        for f in this_week:
+            if f.created_at:
+                active_days.add(f.created_at.replace(tzinfo=None).date())
+
+        streak_bonus = len(active_days) * 5  # up to 35
+        base_score = min(weekly_files * 12, 60)
+        productivity_score = min(base_score + streak_bonus, 100)
+
+        return {
+            "total_files": total_files,
+            "total_minutes": total_minutes,
+            "avg_duration_min": avg_duration_min,
+            "most_used_language": most_used_language.upper(),
+            "total_storage_mb": round(total_storage_mb, 1),
+            "weekly_files": weekly_files,
+            "weekly_minutes": weekly_minutes,
+            "files_trend_pct": files_trend_pct,
+            "minutes_trend_pct": minutes_trend_pct,
+            "quota_pct": quota_pct,
+            "common_keywords": common_keywords,
+            "sentiment": {
+                "positive": pos_pct,
+                "neutral": neu_pct,
+                "negative": neg_pct,
+            },
+            "productivity_score": productivity_score,
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Dashboard stats error: {e}", exc_info=True)
+        # Return zeros with error flag so frontend at least knows
         return {
             "total_files": 0,
             "total_minutes": 0,
@@ -1032,134 +1271,6 @@ async def get_dashboard_stats(
             "sentiment": {"positive": 34, "neutral": 33, "negative": 33},
             "productivity_score": 0,
         }
-
-    # ── Basic aggregates ─────────────────────────────────────────
-    total_storage_mb = sum(f.file_size_mb or 0 for f in all_files)
-
-    # Duration: use duration_seconds if available, else estimate ~1 min per MB
-    total_seconds = sum(
-        f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
-        for f in all_files
-    )
-    total_minutes = round(total_seconds / 60, 1)
-    avg_duration_min = round(total_minutes / total_files, 1) if total_files else 0
-
-    # Most used language
-    lang_counts = Counter(f.language for f in all_files if f.language)
-    most_used_language = lang_counts.most_common(1)[0][0] if lang_counts else "—"
-
-    # ── Weekly stats (last 7 days vs prior 7 days) ───────────────
-    now = datetime.utcnow()
-    week_ago = now - timedelta(days=7)
-    two_weeks_ago = now - timedelta(days=14)
-
-    this_week = [f for f in all_files if f.created_at and f.created_at.replace(tzinfo=None) >= week_ago]
-    last_week = [f for f in all_files if f.created_at and two_weeks_ago <= f.created_at.replace(tzinfo=None) < week_ago]
-
-    weekly_files = len(this_week)
-    weekly_seconds = sum(
-        f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
-        for f in this_week
-    )
-    weekly_minutes = round(weekly_seconds / 60, 1)
-
-    last_week_files = len(last_week)
-    last_week_seconds = sum(
-        f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
-        for f in last_week
-    )
-
-    # Trend percentages
-    files_trend_pct = 0
-    if last_week_files > 0:
-        files_trend_pct = round(((weekly_files - last_week_files) / last_week_files) * 100)
-    elif weekly_files > 0:
-        files_trend_pct = 100
-
-    minutes_trend_pct = 0
-    if last_week_seconds > 0:
-        minutes_trend_pct = round(((weekly_seconds - last_week_seconds) / last_week_seconds) * 100)
-    elif weekly_seconds > 0:
-        minutes_trend_pct = 100
-
-    # Quota: weekly files as % of total (capped at 100)
-    quota_pct = min(round((weekly_files / max(total_files, 1)) * 100), 100)
-
-    # ── Common keywords from recent transcripts ──────────────────
-    recent_files = sorted(all_files, key=lambda f: f.created_at or datetime.min, reverse=True)[:20]
-    word_counter = Counter()
-    for f in recent_files:
-        # Read transcript from content file
-        f_transcript = None
-        if f.content_file:
-            c_data = read_content_file(f.content_file)
-            f_transcript = c_data.get("transcript")
-        
-        if f_transcript:
-            words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
-            word_counter.update(w for w in words if w not in STOP_WORDS)
-
-    common_keywords = [word.title() for word, _ in word_counter.most_common(8)]
-
-    # ── Sentiment heuristic ──────────────────────────────────────
-    pos_count = 0
-    neg_count = 0
-    total_sentiment_words = 0
-    for f in recent_files:
-        # Read transcript from content file
-        f_transcript = None
-        if f.content_file:
-            c_data = read_content_file(f.content_file)
-            f_transcript = c_data.get("transcript")
-
-        if f_transcript:
-            words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
-            for w in words:
-                if w in POSITIVE_WORDS:
-                    pos_count += 1
-                    total_sentiment_words += 1
-                elif w in NEGATIVE_WORDS:
-                    neg_count += 1
-                    total_sentiment_words += 1
-
-    if total_sentiment_words > 0:
-        pos_pct = round((pos_count / total_sentiment_words) * 100)
-        neg_pct = round((neg_count / total_sentiment_words) * 100)
-        neu_pct = 100 - pos_pct - neg_pct
-    else:
-        pos_pct, neu_pct, neg_pct = 34, 33, 33
-
-    # ── Productivity score ───────────────────────────────────────
-    # Composite: base = weekly_files * 10, capped at 100
-    # Bonus for streaks (any activity in each of last 7 days?)
-    active_days = set()
-    for f in this_week:
-        if f.created_at:
-            active_days.add(f.created_at.replace(tzinfo=None).date())
-
-    streak_bonus = len(active_days) * 5  # up to 35
-    base_score = min(weekly_files * 12, 60)
-    productivity_score = min(base_score + streak_bonus, 100)
-
-    return {
-        "total_files": total_files,
-        "total_minutes": total_minutes,
-        "avg_duration_min": avg_duration_min,
-        "most_used_language": most_used_language.upper(),
-        "total_storage_mb": round(total_storage_mb, 1),
-        "weekly_files": weekly_files,
-        "weekly_minutes": weekly_minutes,
-        "files_trend_pct": files_trend_pct,
-        "minutes_trend_pct": minutes_trend_pct,
-        "quota_pct": quota_pct,
-        "common_keywords": common_keywords,
-        "sentiment": {
-            "positive": pos_pct,
-            "neutral": neu_pct,
-            "negative": neg_pct,
-        },
-        "productivity_score": productivity_score,
-    }
 
 # =====================================================
 # Frontend Routes (No Auth Check)

@@ -363,14 +363,134 @@
     }
 
     // ═══════════════════════════════════════════════════
+    // STARRED FILES
+    // ═══════════════════════════════════════════════════
+    async function fetchStarredFiles() {
+        const loader = document.getElementById('starredFilesLoader');
+        const container = document.getElementById('starredFilesContainer');
+        const emptyState = document.getElementById('starredEmptyState');
+
+        try {
+            // Use fetchWithAuth if available
+            const fetchFn = window.fetchWithAuth || (async (url) => {
+                const token = localStorage.getItem('access_token');
+                return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+            });
+
+            // Optimize: don't fetch content (transcript/summary) to reduce load time
+            const res = await fetchFn('/api/files?limit=100&include_content=false');
+
+            if (!res || !res.ok) {
+                const status = res ? res.status : 'no_response';
+                throw new Error(`Failed to fetch files (status: ${status})`);
+            }
+
+            const data = await res.json();
+            const starredFiles = (data.files || []).filter(f => f.is_starred);
+
+            // Hide loader
+            if (loader) loader.classList.add('hidden');
+
+            if (starredFiles.length === 0) {
+                if (emptyState) emptyState.classList.remove('hidden');
+                if (container) container.classList.add('hidden');
+            } else {
+                if (emptyState) emptyState.classList.add('hidden');
+                if (container) {
+                    container.classList.remove('hidden');
+                    // Show up to 6 recent starred files
+                    container.innerHTML = starredFiles.slice(0, 6).map(f => createFileCard(f)).join('');
+                    attachCardListeners();
+                }
+            }
+        } catch (err) {
+            console.error('[Dashboard] Error fetching starred files:', err);
+            // Ensure loader shows error
+            if (loader) {
+                loader.classList.remove('hidden');
+                loader.innerHTML = `
+                    <div style="text-align:center; color: var(--error)">
+                        <i class="fas fa-exclamation-circle" style="font-size:1.5rem; margin-bottom:0.5rem"></i>
+                        <p>Failed to load starred files</p>
+                        <button onclick="location.reload()" style="margin-top:0.5rem; padding:0.25rem 0.5rem; cursor:pointer">Retry</button>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    function createFileCard(file) {
+        const date = new Date(file.created_at).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric'
+        });
+
+        return `
+        <div class="file-card" data-file-id="${file.id}">
+            <div class="file-card-header">
+                <div class="file-info">
+                    <div class="file-name" title="${file.filename}">${file.filename}</div>
+                    <div class="file-meta">
+                        <span class="file-meta-item"><i class="fas fa-hdd"></i> ${file.file_size_mb} MB</span>
+                        <span class="file-meta-item"><i class="fas fa-language"></i> ${file.language}</span>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="action-btn starred" title="Starred">
+                        <i class="fas fa-star"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="file-card-footer">
+                <div class="file-date"><i class="fas fa-clock"></i> ${date}</div>
+                <button class="view-btn-sm" data-file-id="${file.id}">
+                    <i class="fas fa-eye"></i> View
+                </button>
+            </div>
+        </div>
+        `;
+    }
+
+    function attachCardListeners() {
+        document.querySelectorAll('.view-btn-sm').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.location.href = `/results?id=${btn.dataset.fileId}`;
+            });
+        });
+
+        document.querySelectorAll('.file-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('button')) {
+                    window.location.href = `/results?id=${card.dataset.fileId}`;
+                }
+            });
+        });
+    }
+
+    // ═══════════════════════════════════════════════════
     // INIT
     // ═══════════════════════════════════════════════════
     async function init() {
+        populateTopics([]); // clear topics initially
+        fetchStarredFiles(); // Load starred files specifically
+
         initChatbot();
         initQuickActions();
 
         // Fetch real data and populate, then animate
         const data = await fetchDashboardData();
+        if (!data) {
+            console.error('[Dashboard] Data fetch failed.');
+            // Optionally show a global error toast or banner
+            const header = document.querySelector('.dash-header-content');
+            if (header) {
+                const errBanner = document.createElement('div');
+                errBanner.style.cssText = 'background:rgba(239,68,68,0.2); border:1px solid var(--error); color:var(--error); padding:0.5rem; margin-top:1rem; border-radius:6px; font-size:0.9rem;';
+                errBanner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to load dashboard stats. Please refresh.';
+                header.appendChild(errBanner);
+            }
+            return;
+        }
         populateDashboard(data);
     }
 
