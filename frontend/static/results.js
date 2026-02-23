@@ -116,6 +116,10 @@ class ResultsPage {
             volumeFill: document.getElementById('volumeFill'),
             speedDisplay: document.getElementById('speedDisplay'),
 
+            // Scroll controls
+            scrollToTop: document.getElementById('scrollToTop'),
+            scrollToBottom: document.getElementById('scrollToBottom'),
+
             // Toast
             toastContainer: document.getElementById('toastContainer'),
 
@@ -297,6 +301,23 @@ class ResultsPage {
         const exportFileInfoBtn = document.getElementById('exportFileInfoBtn');
         if (exportFileInfoBtn) {
             exportFileInfoBtn.addEventListener('click', () => this.exportFileInfo());
+        }
+
+        // Scroll to top / bottom of transcript
+        if (this.elements.scrollToTop) {
+            this.elements.scrollToTop.addEventListener('click', () => {
+                if (this.elements.transcript) {
+                    this.elements.transcript.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+
+        if (this.elements.scrollToBottom) {
+            this.elements.scrollToBottom.addEventListener('click', () => {
+                if (this.elements.transcript) {
+                    this.elements.transcript.scrollTo({ top: this.elements.transcript.scrollHeight, behavior: 'smooth' });
+                }
+            });
         }
     }
 
