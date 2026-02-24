@@ -26,7 +26,7 @@ from fastapi import (
     status
 )
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse, RedirectResponse, FileResponse
+from fastapi.responses import StreamingResponse, RedirectResponse, FileResponse, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -1323,7 +1323,10 @@ def get_dashboard_stats(
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse("static/favicon.ico")
+    path = "static/favicon.ico"
+    if os.path.exists(path):
+        return FileResponse(path)
+    return Response(status_code=204)
 
 # =====================================================
 # Frontend Routes (No Auth Check)
@@ -1376,9 +1379,3 @@ async def serve_user():
     """Serve user profile page"""
     file_path = os.path.join(FRONTEND_DIR, "user.html")
     return FileResponse(file_path)
-
-# =====================================================
-# Maintenance
-# =====================================================
-
-

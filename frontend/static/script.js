@@ -214,3 +214,61 @@ document.addEventListener('DOMContentLoaded', function () {
 
   scrollElements.forEach(el => scrollObserver.observe(el));
 });
+
+// Benefits Tab Switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.getAttribute('data-tab');
+
+    // Update active button
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Show target pane, hide others
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+      pane.classList.remove('active');
+    });
+    document.getElementById(target).classList.add('active');
+  });
+});
+
+// Benefits Tab Switching with Scroll Animation
+function animateBenefitCards(pane) {
+  const cards = pane.querySelectorAll('.benefit-item');
+  cards.forEach(card => {
+    card.classList.remove('benefit-animate');
+    void card.offsetWidth; // force reflow to restart animation
+  });
+  cards.forEach((card, index) => {
+    setTimeout(() => {
+      card.classList.add('benefit-animate');
+    }, index * 100); // 100ms stagger between each card
+  });
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.getAttribute('data-tab');
+
+    // Update active button
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Show target pane, hide others
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+      pane.classList.remove('active');
+    });
+
+    const activePane = document.getElementById(target);
+    activePane.classList.add('active');
+
+    // Trigger animation
+    animateBenefitCards(activePane);
+  });
+});
+
+// Animate default tab on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const defaultPane = document.querySelector('.tab-pane.active');
+  if (defaultPane) animateBenefitCards(defaultPane);
+});
