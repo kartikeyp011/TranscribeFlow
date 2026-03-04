@@ -443,7 +443,7 @@ Text:
             if not hf_token:
                 raise ValueError("Missing HUGGINGFACE_TOKEN or HUGGINGFACE_API_KEY in .env")
             
-            # ✅ NEW: Preprocess audio to fix sampling issues
+            # Preprocess audio with torchaudio
             import torchaudio
             import torch
             
@@ -462,35 +462,36 @@ Text:
                 logger.info("🔄 Converting to mono...")
                 waveform = torch.mean(waveform, dim=0, keepdim=True)
             
-            # Save preprocessed audio to temp file
-            base, ext = os.path.splitext(audio_path)
-            temp_audio = f"{base}_preprocessed.wav"
-            torchaudio.save(temp_audio, waveform, sample_rate)
-            
             logger.info("✅ Audio preprocessed for diarization")
             
-            # Load diarization pipeline
+            # Load diarization pipeline (pyannote-audio 4.0+)
             diarization_pipeline = DiarizationPipeline.from_pretrained(
-                "pyannote/speaker-diarization-3.1",
+                "pyannote/speaker-diarization-community-1",
                 token=hf_token
             )
+            
+            # Pass audio as in-memory waveform dict to avoid torchcodec/FFmpeg dependency
+            # pyannote 4.0 accepts {'waveform': (channel, time) Tensor, 'sample_rate': int}
+            audio_input = {"waveform": waveform, "sample_rate": sample_rate}
             
             # Run diarization on preprocessed audio
             if num_speakers:
                 logger.info(f"🎯 Running diarization with {num_speakers} speakers...")
-                diarization_output = diarization_pipeline(temp_audio, num_speakers=num_speakers)
+                diarization_output = diarization_pipeline(audio_input, num_speakers=num_speakers)
             else:
                 logger.info("🎯 Running diarization (auto-detect speakers)...")
-                diarization_output = diarization_pipeline(temp_audio)
+                diarization_output = diarization_pipeline(audio_input)
             
-            # Handle different return types from pyannote versions
-            # pyannote 3.1+ returns DiarizeOutput dataclass, older versions return Annotation
-            if hasattr(diarization_output, 'speaker_diarization'):
-                # New pyannote 3.1+ DiarizeOutput dataclass
-                logger.info("📦 Extracting annotation from DiarizeOutput...")
+            # pyannote-audio 4.0+ returns DiarizeOutput dataclass
+            # Prefer exclusive_speaker_diarization (one speaker at a time) for better STT reconciliation
+            if hasattr(diarization_output, 'exclusive_speaker_diarization'):
+                logger.info("📦 Using exclusive speaker diarization (pyannote 4.0+)...")
+                annotation = diarization_output.exclusive_speaker_diarization
+            elif hasattr(diarization_output, 'speaker_diarization'):
+                logger.info("📦 Using regular speaker diarization...")
                 annotation = diarization_output.speaker_diarization
             elif hasattr(diarization_output, 'itertracks'):
-                # Legacy: direct Annotation object
+                # Legacy fallback: direct Annotation object
                 annotation = diarization_output
             else:
                 raise TypeError(f"Unexpected diarization output type: {type(diarization_output)}")
@@ -503,12 +504,6 @@ Text:
                     "start": round(turn.start, 2),
                     "end": round(turn.end, 2)
                 })
-            
-            # Clean up temp file
-            try:
-                os.remove(temp_audio)
-            except:
-                pass
             
             num_speakers_found = len(set([s['speaker'] for s in segments]))
             logger.info(f"✅ Found {num_speakers_found} speakers in {len(segments)} segments")

@@ -1136,7 +1136,7 @@ def get_dashboard_stats(
                 "minutes_trend_pct": 0,
                 "quota_pct": 0,
                 "common_keywords": [],
-                "sentiment": {"positive": 34, "neutral": 33, "negative": 33},
+                "sentiment": {"positive": 0, "neutral": 0, "negative": 0},
                 "productivity_score": 0,
             }
 
@@ -1152,7 +1152,7 @@ def get_dashboard_stats(
                             f.duration_seconds = max_end
                             db.add(f)
                 except Exception:
-                    pass  # Skip files with missing/corrupt content
+                    pass
         try:
             db.commit()
         except Exception:
@@ -1161,7 +1161,6 @@ def get_dashboard_stats(
         # ── Basic aggregates ─────────────────────────────────────────
         total_storage_mb = sum(f.file_size_mb or 0 for f in all_files)
 
-        # Duration: use duration_seconds if available, else estimate ~1 min per MB
         total_seconds = sum(
             f.duration_seconds if f.duration_seconds else (f.file_size_mb or 0) * 60
             for f in all_files
@@ -1169,7 +1168,6 @@ def get_dashboard_stats(
         total_minutes = round(total_seconds / 60, 1)
         avg_duration_min = round(total_minutes / total_files, 1) if total_files else 0
 
-        # Most used language
         lang_counts = Counter(f.language for f in all_files if f.language)
         most_used_language = lang_counts.most_common(1)[0][0] if lang_counts else "—"
 
@@ -1178,7 +1176,6 @@ def get_dashboard_stats(
         week_ago = now - timedelta(days=7)
         two_weeks_ago = now - timedelta(days=14)
 
-        # After (safe):
         this_week = []
         for f in all_files:
             try:
@@ -1204,7 +1201,6 @@ def get_dashboard_stats(
             for f in last_week
         )
 
-        # Trend percentages
         files_trend_pct = 0
         if last_week_files > 0:
             files_trend_pct = round(((weekly_files - last_week_files) / last_week_files) * 100)
@@ -1217,14 +1213,12 @@ def get_dashboard_stats(
         elif weekly_seconds > 0:
             minutes_trend_pct = 100
 
-        # Quota: weekly files as % of total (capped at 100)
         quota_pct = min(round((weekly_files / max(total_files, 1)) * 100), 100)
 
         # ── Common keywords from recent transcripts ──────────────────
         recent_files = sorted(all_files, key=lambda f: f.created_at or datetime.min, reverse=True)[:20]
         word_counter = Counter()
         for f in recent_files:
-            # Read transcript from content file
             f_transcript = None
             if f.content_file:
                 try:
@@ -1232,7 +1226,6 @@ def get_dashboard_stats(
                     f_transcript = c_data.get("transcript")
                 except Exception:
                     pass
-            
             if f_transcript:
                 words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
                 word_counter.update(w for w in words if w not in STOP_WORDS)
@@ -1244,7 +1237,6 @@ def get_dashboard_stats(
         neg_count = 0
         total_sentiment_words = 0
         for f in recent_files:
-            # Read transcript from content file
             f_transcript = None
             if f.content_file:
                 try:
@@ -1252,7 +1244,6 @@ def get_dashboard_stats(
                     f_transcript = c_data.get("transcript")
                 except Exception:
                     pass
-
             if f_transcript:
                 words = re.findall(r'[a-zA-Z]{3,}', f_transcript.lower())
                 for w in words:
@@ -1268,19 +1259,21 @@ def get_dashboard_stats(
             neg_pct = round((neg_count / total_sentiment_words) * 100)
             neu_pct = 100 - pos_pct - neg_pct
         else:
-            pos_pct, neu_pct, neg_pct = 34, 33, 33
+            pos_pct, neu_pct, neg_pct = 0, 0, 0
 
-        # ── Productivity score ───────────────────────────────────────
-        # Composite: base = weekly_files * 10, capped at 100
-        # Bonus for streaks (any activity in each of last 7 days?)
+        # ── Productivity score (60/40 weighted average) ──────────────
+        WEEKLY_FILE_TARGET = 10   # target files per week
+        WEEKLY_DAY_TARGET  = 7    # target active days per week
+
         active_days = set()
         for f in this_week:
             if f.created_at:
                 active_days.add(f.created_at.replace(tzinfo=None).date())
 
-        streak_bonus = len(active_days) * 5  # up to 35
-        base_score = min(weekly_files * 12, 60)
-        productivity_score = min(base_score + streak_bonus, 100)
+        file_score = min((weekly_files / WEEKLY_FILE_TARGET) * 100, 100)   # 60% weight
+        day_score  = min((len(active_days) / WEEKLY_DAY_TARGET) * 100, 100) # 40% weight
+
+        productivity_score = round(0.6 * file_score + 0.4 * day_score)
 
         return {
             "total_files": total_files,
@@ -1304,7 +1297,6 @@ def get_dashboard_stats(
 
     except Exception as e:
         logger.error(f"❌ Dashboard stats error: {e}", exc_info=True)
-        # Return zeros with error flag so frontend at least knows
         return {
             "total_files": 0,
             "total_minutes": 0,
@@ -1320,6 +1312,7 @@ def get_dashboard_stats(
             "sentiment": {"positive": 34, "neutral": 33, "negative": 33},
             "productivity_score": 0,
         }
+
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
