@@ -1,13 +1,13 @@
 // Dashboard JavaScript
 
 // Global state
-let allFiles = [];
-let filteredFiles = [];
-let currentPage = 1;
-let filesPerPage = 12;
-let currentFilter = 'all';
-let currentView = 'grid';
-let fileToDelete = null;
+let allFiles = [];                 // Complete list of files from API
+let filteredFiles = [];             // Files after applying search/filters
+let currentPage = 1;                // Current pagination page
+let filesPerPage = 12;              // Number of files to display per page
+let currentFilter = 'all';          // Active filter (all, starred, pinned)
+let currentView = 'grid';            // Display mode (grid or list)
+let fileToDelete = null;            // ID of file pending deletion
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', async function () {
@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupEventListeners();
 });
 
-// Load user information
+/**
+ * Load user information from the authentication endpoint
+ * Updates the UI with the current username
+ */
 async function loadUserInfo() {
     try {
         const response = await fetchWithAuth('/api/auth/me');
@@ -36,7 +39,10 @@ async function loadUserInfo() {
     }
 }
 
-// Load all files
+/**
+ * Fetch all files from the API
+ * Updates global state, statistics, and triggers rendering
+ */
 async function loadFiles() {
     showLoading();
 
@@ -63,7 +69,10 @@ async function loadFiles() {
     }
 }
 
-// Update statistics
+/**
+ * Update statistics cards with current file data
+ * Calculates totals for files, starred items, languages, and storage
+ */
 function updateStats() {
     const totalFiles = allFiles.length;
     const starredFiles = allFiles.filter(f => f.is_starred).length;
@@ -81,7 +90,10 @@ function updateStats() {
     document.getElementById('totalStorage').textContent = totalStorage.toFixed(1) + ' MB';
 }
 
-// Apply filters
+/**
+ * Apply active filters and search term to the file list
+ * Updates filteredFiles array and resets pagination
+ */
 function applyFilters() {
     let filtered = [...allFiles];
 
@@ -104,7 +116,10 @@ function applyFilters() {
     currentPage = 1;
 }
 
-// Render files
+/**
+ * Render files to the DOM based on current filters, view mode, and pagination
+ * Handles empty states and attaches event listeners to new elements
+ */
 function renderFiles() {
     const grid = document.getElementById('filesGrid');
     const emptyState = document.getElementById('emptyState');
@@ -141,7 +156,11 @@ function renderFiles() {
     attachFileCardListeners();
 }
 
-// Create file card HTML
+/**
+ * Generate HTML markup for a file card
+ * @param {Object} file - File object from API
+ * @returns {string} HTML string for the file card
+ */
 function createFileCard(file) {
     const date = new Date(file.created_at).toLocaleDateString('en-US', {
         month: 'short',
@@ -206,7 +225,10 @@ function createFileCard(file) {
     `;
 }
 
-// Attach event listeners to file cards
+/**
+ * Attach event listeners to interactive elements within file cards
+ * Handles star, pin, view, delete, and card click actions
+ */
 function attachFileCardListeners() {
     // Star buttons
     document.querySelectorAll('.star-btn').forEach(btn => {
@@ -256,7 +278,11 @@ function attachFileCardListeners() {
     });
 }
 
-// Toggle star
+/**
+ * Toggle star status for a file
+ * @param {string} fileId - ID of the file to update
+ * @param {boolean} starred - New starred status
+ */
 async function toggleStar(fileId, starred) {
     try {
         const response = await fetchWithAuth(`/api/files/${fileId}/star`, {
@@ -284,7 +310,11 @@ async function toggleStar(fileId, starred) {
     }
 }
 
-// Toggle pin
+/**
+ * Toggle pin status for a file
+ * @param {string} fileId - ID of the file to update
+ * @param {boolean} pinned - New pinned status
+ */
 async function togglePin(fileId, pinned) {
     try {
         const response = await fetchWithAuth(`/api/files/${fileId}/pin`, {
@@ -311,7 +341,11 @@ async function togglePin(fileId, pinned) {
     }
 }
 
-// View file
+/**
+ * Navigate to the results page for a specific file
+ * Stores file data in session storage for retrieval on results page
+ * @param {string} fileId - ID of the file to view
+ */
 function viewFile(fileId) {
     const file = allFiles.find(f => f.id === fileId);
     if (file) {
@@ -324,20 +358,29 @@ function viewFile(fileId) {
     }
 }
 
-// Show delete modal
+/**
+ * Display the delete confirmation modal
+ * @param {string} fileId - ID of file to delete
+ * @param {string} filename - Name of file to delete
+ */
 function showDeleteModal(fileId, filename) {
     fileToDelete = fileId;
     document.getElementById('deleteFileName').textContent = filename;
     document.getElementById('deleteModal').classList.remove('hidden');
 }
 
-// Close delete modal
+/**
+ * Close the delete confirmation modal and clear pending deletion
+ */
 function closeDeleteModal() {
     fileToDelete = null;
     document.getElementById('deleteModal').classList.add('hidden');
 }
 
-// Confirm delete
+/**
+ * Execute file deletion after user confirmation
+ * Updates local state and UI upon successful deletion
+ */
 async function confirmDelete() {
     if (!fileToDelete) return;
 
@@ -365,7 +408,9 @@ async function confirmDelete() {
     }
 }
 
-// Update pagination
+/**
+ * Update pagination controls based on current file count and page
+ */
 function updatePagination() {
     const totalPages = Math.ceil(filteredFiles.length / filesPerPage);
 
@@ -380,7 +425,10 @@ function updatePagination() {
     }
 }
 
-// Setup event listeners
+/**
+ * Initialize all event listeners for dashboard controls
+ * Handles search, filters, view toggle, pagination, and refresh
+ */
 function setupEventListeners() {
     // Search input
     document.getElementById('searchInput').addEventListener('input', () => {
@@ -452,6 +500,11 @@ function showEmptyState() {
     document.getElementById('filesGrid').classList.add('hidden');
 }
 
+/**
+ * Display a temporary toast notification
+ * @param {string} message - Message to display
+ * @param {string} type - Toast type (success, error, warning, info)
+ */
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');

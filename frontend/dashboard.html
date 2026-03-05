@@ -18,14 +18,14 @@
 <body>
     <div class="app-container">
 
-        <!-- Ambient Background Effects -->
+        <!-- Ambient background effects -->
         <div class="ambient-grid"></div>
         <div class="floating-particles" id="particles"></div>
 
-        <!-- Main Content -->
+        <!-- Main content area -->
         <main class="main-content">
 
-            <!-- ===== Page Header with Parallax ===== -->
+            <!-- Page header with welcome section -->
             <section class="dash-header" id="dashHeader">
                 <div class="dash-container">
                     <div class="dash-header-content">
@@ -41,12 +41,12 @@
                 </div>
             </section>
 
-            <!-- ===== Main Grid ===== -->
+            <!-- Dashboard main grid -->
             <section class="dash-content">
                 <div class="dash-container">
                     <div class="dash-grid">
 
-                        <!-- ──────────── QUICK ACTIONS with Magnetic Effect ──────────── -->
+                        <!-- Quick actions card - upload and history -->
                         <div class="dash-card card-animate magnetic-card" data-delay="0" data-tilt>
                             <div class="dash-card-header">
                                 <div class="dash-card-icon pulse-icon">
@@ -56,7 +56,7 @@
                             </div>
                             <div class="dash-card-body">
                                 <div class="actions-grid">
-                                    <!-- Upload New Audio -->
+                                    <!-- Upload new audio action -->
                                     <div class="action-card magnetic-element" id="actionUpload">
                                         <div class="action-icon">
                                             <i class="fas fa-cloud-upload-alt"></i>
@@ -68,7 +68,7 @@
                                         </div>
                                         <i class="fas fa-arrow-right action-arrow"></i>
                                     </div>
-                                    <!-- Go to History -->
+                                    <!-- View history action -->
                                     <div class="action-card magnetic-element" id="actionHistory">
                                         <div class="action-icon history">
                                             <i class="fas fa-history"></i>
@@ -84,7 +84,7 @@
                             </div>
                         </div>
 
-                        <!-- ──────────── USAGE SNAPSHOT with Liquid Fill ──────────── -->
+                        <!-- Usage statistics card -->
                         <div class="dash-card card-animate" data-delay="1">
                             <div class="dash-card-header">
                                 <div class="dash-card-icon">
@@ -95,7 +95,7 @@
                             </div>
                             <div class="dash-card-body">
                                 <div class="stats-mini-grid">
-                                    <!-- Minutes Transcribed with Sparkline -->
+                                    <!-- Minutes transcribed -->
                                     <div class="stat-mini hover-lift" data-stat="minutes">
                                         <div class="stat-mini-value counter" id="statMinutes">0</div>
                                         <div class="stat-mini-label">Total Minutes</div>
@@ -104,7 +104,7 @@
                                         </div>
                                         <div class="stat-sparkline" id="sparklineMinutes"></div>
                                     </div>
-                                    <!-- Files Processed -->
+                                    <!-- Files processed count -->
                                     <div class="stat-mini hover-lift" data-stat="files">
                                         <div class="stat-mini-value counter" id="statFiles">0</div>
                                         <div class="stat-mini-label">Files Processed</div>
@@ -113,7 +113,7 @@
                                         </div>
                                         <div class="stat-sparkline" id="sparklineFiles"></div>
                                     </div>
-                                    <!-- Most Used Language -->
+                                    <!-- Most used language -->
                                     <div class="stat-mini hover-lift">
                                         <div class="stat-mini-value lang-value" id="statLanguage">—</div>
                                         <div class="stat-mini-label">Most Used Language</div>
@@ -121,7 +121,7 @@
                                             <i class="fas fa-minus"></i> Stable
                                         </div>
                                     </div>
-                                    <!-- Audio Duration Frequency -->
+                                    <!-- Average audio duration -->
                                     <div class="stat-mini hover-lift">
                                         <div class="stat-mini-value counter" id="statAvgDuration">0</div>
                                         <div class="stat-mini-label">Avg Duration (min)</div>
@@ -131,7 +131,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Progress Bar with Liquid Effect -->
+                                <!-- Weekly quota progress bar -->
                                 <div class="usage-progress liquid-container">
                                     <div class="progress-label">
                                         <span>Weekly Quota Used</span>
@@ -147,7 +147,7 @@
                             </div>
                         </div>
 
-                        <!-- ──────────── STARRED FILES with Parallax ──────────── -->
+                        <!-- Starred files section -->
                         <div class="dash-card card-full card-animate" data-delay="2">
                             <div class="dash-card-header">
                                 <div class="dash-card-icon floating-icon">
@@ -175,7 +175,7 @@
                             </div>
                         </div>
 
-                        <!-- ──────────── AI INSIGHTS with Advanced Animations ──────────── -->
+                        <!-- AI-powered insights panel -->
                         <div class="dash-card card-full card-animate" data-delay="2">
                             <div class="dash-card-header">
                                 <div class="dash-card-icon brain-pulse">
@@ -190,7 +190,7 @@
                             <div class="dash-card-body">
                                 <div class="insights-grid">
 
-                                    <!-- 1) Common Topics with Floating Tags -->
+                                    <!-- Common topics from transcriptions -->
                                     <div class="insight-section">
                                         <h3 class="insight-label">
                                             <i class="fas fa-tags"></i> Common Topics
@@ -200,7 +200,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- 2) Sentiment Trend with Animated Bars -->
+                                    <!-- Sentiment analysis trend -->
                                     <div class="insight-section">
                                         <h3 class="insight-label">
                                             <i class="fas fa-chart-line"></i> Sentiment Trend
@@ -233,7 +233,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- 3) Productivity Score with Particle Ring -->
+                                    <!-- Productivity score visualization -->
                                     <div class="insight-section center">
                                         <h3 class="insight-label">
                                             <i class="fas fa-tachometer-alt"></i> Productivity Score
@@ -252,20 +252,20 @@
                             </div>
                         </div>
 
-                    </div><!-- /.dash-grid -->
+                    </div><!-- End dashboard grid -->
                 </div>
             </section>
 
         </main>
 
-        <!-- ===== Enhanced Floating Chatbot ===== -->
-        <!-- Toggle Button with Pulse -->
+        <!-- Floating chat assistant -->
+        <!-- Toggle button for chat window -->
         <button class="chatbot-toggle breathing" id="chatbotToggle" aria-label="Open chat assistant">
             <i class="fas fa-comment-dots chatbot-toggle-icon" id="chatbotIcon"></i>
             <span class="toggle-ring"></span>
         </button>
 
-        <!-- Chat Window with Glass Effect -->
+        <!-- Chat window container -->
         <div class="chatbot-window glass-effect" id="chatbotWindow">
             <div class="chatbot-header">
                 <div class="chatbot-header-info">
@@ -283,11 +283,13 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            <!-- Message thread display -->
             <div class="chatbot-messages" id="chatbotMessages">
                 <div class="chat-msg bot">
                     <div class="chat-bubble slide-in">Hi there! 👋 How can I help you today?</div>
                 </div>
             </div>
+            <!-- Chat input area with quick suggestions -->
             <div class="chatbot-input-area">
                 <div class="suggestions-carousel" id="suggestionsCarousel">
                     <button class="suggestion-chip">Upload file</button>
@@ -308,7 +310,7 @@
             </div>
         </div>
 
-        <!-- Footer with Parallax -->
+        <!-- Site footer with legal links -->
         <footer class="premium-footer">
             <div class="footer-bottom">
                 <div class="copyright">
@@ -326,8 +328,8 @@
     <!-- Scripts -->
     <script src="/static/sidebar.js"></script>
     <script src="/static/dashboard.js"></script>
+    <!-- Authentication check -->
     <script>
-        // Auth guard
         const token = localStorage.getItem('access_token');
         if (!token) {
             window.location.href = '/login';

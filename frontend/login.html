@@ -16,13 +16,13 @@
 <body>
 
     <div class="auth-page" style="visibility: hidden;">
-        <!-- Galaxy Background Layers - Static -->
+        <!-- Background decorative elements - static visual layers -->
         <div class="galaxy-nebula-1"></div>
         <div class="galaxy-nebula-2"></div>
         <div class="galaxy-nebula-3"></div>
         <div class="milky-way-band"></div>
 
-        <!-- Premium Navigation -->
+        <!-- Authentication navigation - minimal with home/register options -->
         <nav class="premium-nav">
             <div class="nav-container">
                 <div class="nav-brand">
@@ -51,10 +51,10 @@
             </div>
         </nav>
 
-        <!-- Auth Container -->
+        <!-- Main authentication container - login form -->
         <div class="auth-container">
             <div class="auth-card">
-                <!-- Auth Header -->
+                <!-- Auth header with branding -->
                 <div class="auth-header">
                     <div class="auth-logo-icon">
                         <i class="fas fa-wave-square"></i>
@@ -63,9 +63,9 @@
                     <p class="auth-subtitle">Sign in to your account</p>
                 </div>
 
-                <!-- Auth Form -->
+                <!-- Login form with credentials input -->
                 <form id="loginForm" class="auth-form">
-                    <!-- Username Field -->
+                    <!-- Username input field -->
                     <div class="form-group">
                         <label class="form-label">
                             <i class="fas fa-user"></i>
@@ -78,7 +78,7 @@
                         </div>
                     </div>
 
-                    <!-- Password Field -->
+                    <!-- Password field with visibility toggle -->
                     <div class="form-group">
                         <label class="form-label">
                             <i class="fas fa-lock"></i>
@@ -95,14 +95,14 @@
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
+                    <!-- Primary authentication action -->
                     <button type="submit" id="loginBtn" class="btn-auth">
                         <i class="fas fa-sign-in-alt"></i>
                         <span>Sign In</span>
                         <div class="spinner"></div>
                     </button>
 
-                    <!-- Messages Container -->
+                    <!-- Feedback messages for login status -->
                     <div id="messageContainer" class="message-container">
                         <div id="errorMessage" class="message error" style="display: none;">
                             <i class="fas fa-exclamation-circle"></i>
@@ -115,7 +115,7 @@
                     </div>
                 </form>
 
-                <!-- Footer -->
+                <!-- Registration prompt for new users -->
                 <div class="auth-footer">
                     Don't have an account?
                     <a href="/register" class="auth-link">
@@ -126,13 +126,13 @@
         </div>
     </div>
 
+    <!-- Session validation - redirects authenticated users to dashboard -->
     <script>
-        // If already logged in, redirect to dashboard
         (async () => {
             const token = localStorage.getItem('access_token');
             if (token) {
                 try {
-                    // Verify token validity
+                    // Verify token validity with backend
                     const res = await fetch('/api/auth/me', {
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
@@ -141,22 +141,23 @@
                         window.location.href = '/dashboard';
                         return;
                     } else {
-                        // Token invalid/expired, clear it
+                        // Token invalid/expired - clear storage and show login
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('token_type');
                         document.querySelector('.auth-page').style.visibility = 'visible';
                     }
                 } catch (e) {
-                    // Network error or other issue, show login
+                    // Network error - show login form anyway
                     console.error("Auth check failed:", e);
                     document.querySelector('.auth-page').style.visibility = 'visible';
                 }
             } else {
-                // No token, show login
+                // No existing session - display login
                 document.querySelector('.auth-page').style.visibility = 'visible';
             }
         })();
     </script>
+    <!-- Login form validation and submission handler -->
     <script src="static/login.js"></script>
 </body>
 

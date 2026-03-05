@@ -1,13 +1,18 @@
 // Results Page JavaScript
+
+/**
+ * Main controller class for the transcription results page
+ * Handles audio playback, transcript display, translation, search, and export functionality
+ */
 class ResultsPage {
     constructor() {
-        this.currentData = null;
-        this.audioPlayer = null;
-        this.searchMatches = [];
-        this.currentMatchIndex = -1;
-        this.playbackSpeed = 1.0;
-        this.currentSpeakingCard = null;
-        this.isLooping = false;
+        this.currentData = null;              // Complete file data from API/session
+        this.audioPlayer = null;               // Audio element reference
+        this.searchMatches = [];                // Array of search result indices
+        this.currentMatchIndex = -1;            // Current highlighted search match
+        this.playbackSpeed = 1.0;               // Current audio playback speed
+        this.currentSpeakingCard = null;         // Currently active text-to-speech card
+        this.isLooping = false;                  // Audio loop state
 
         this.checkAuthentication();
         this.initializeElements();
@@ -15,6 +20,10 @@ class ResultsPage {
         this.loadResults();
     }
 
+    /**
+     * Verify user authentication status
+     * Redirects to login if no valid token found
+     */
     checkAuthentication() {
         const token = localStorage.getItem('access_token');
         if (!token) {
@@ -22,6 +31,13 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Wrapper for authenticated API requests
+     * Automatically adds auth token and handles 401 responses
+     * @param {string} url - API endpoint URL
+     * @param {Object} options - Fetch options
+     * @returns {Promise<Response|null>} Fetch response or null if unauthorized
+     */
     async fetchWithAuth(url, options = {}) {
         const token = localStorage.getItem('access_token');
 
@@ -52,6 +68,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Cache DOM elements for frequent access
+     */
     initializeElements() {
         this.elements = {
             // File Info
@@ -130,6 +149,9 @@ class ResultsPage {
         this.audioPlayer = this.elements.audioPlayer;
     }
 
+    /**
+     * Initialize all event listeners for user interactions
+     */
     setupEventListeners() {
         // Audio Player Controls
         if (this.elements.playPause) {
@@ -321,6 +343,10 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Load transcription results from API or session storage
+     * Handles both direct file ID URLs and stored session data
+     */
     async loadResults() {
         try {
             // Get file ID from URL or sessionStorage
@@ -387,6 +413,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Hide the loading overlay with fade out animation
+     */
     hideLoading() {
         if (this.elements.loadingOverlay) {
             this.elements.loadingOverlay.classList.remove('visible');
@@ -397,6 +426,9 @@ class ResultsPage {
 
     }
 
+    /**
+     * Display file metadata in the info panel
+     */
     displayFileInfo() {
         if (!this.currentData) return;
 
@@ -446,6 +478,9 @@ class ResultsPage {
     }
 
     // Add this new method to fetch audio file size
+    /**
+     * Attempt to fetch audio file size via HEAD request if not provided in metadata
+     */
     async fetchAudioFileSize() {
         try {
             const audioUrl = this.currentData.audio_url ||
@@ -498,6 +533,10 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Get formatted file info text for copy/export
+     * @returns {string} Formatted file information
+     */
     getFileInfoText() {
         const name = this.elements.fileInfoName?.textContent || 'Unknown';
         const size = this.elements.fileInfoSize?.textContent || 'Unknown';
@@ -506,6 +545,9 @@ class ResultsPage {
         return `File Name: ${name}\nFile Size: ${size}\nProcessed: ${time}\nLanguage: ${lang}`;
     }
 
+    /**
+     * Copy file information to clipboard
+     */
     copyFileInfo() {
         const text = this.getFileInfoText();
         navigator.clipboard.writeText(text).then(() => {
@@ -515,6 +557,9 @@ class ResultsPage {
         });
     }
 
+    /**
+     * Export file information as text file
+     */
     exportFileInfo() {
         const text = this.getFileInfoText();
         const filename = (this.currentData?.filename || 'file-info').replace(/\.[^.]+$/, '') + '_info.txt';
@@ -528,6 +573,9 @@ class ResultsPage {
         this.showToast('File info exported!', 'success');
     }
 
+    /**
+     * Display transcript content in the UI
+     */
     displayTranscript() {
         if (!this.currentData || !this.elements.transcript) return;
 
@@ -548,6 +596,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Display summary content in the UI
+     */
     displaySummary() {
         if (!this.currentData || !this.elements.summary) return;
 
@@ -565,6 +616,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Initialize audio player with the file's audio URL
+     */
     setupAudioPlayer() {
         if (!this.currentData || !this.audioPlayer) return;
 
@@ -577,6 +631,11 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Format transcript text for display with proper paragraphs
+     * @param {string} text - Raw transcript text
+     * @returns {string} HTML formatted transcript
+     */
     formatTranscript(text) {
         if (!text) return '';
 
@@ -601,6 +660,12 @@ class ResultsPage {
             .join('');
     }
 
+    /**
+     * Format summary text for display with proper structure
+     * Handles markdown, bullet points, and headings
+     * @param {string} text - Raw summary text
+     * @returns {string} HTML formatted summary
+     */
     formatSummary(text) {
         // Convert markdown-style bold **text** to <strong>text</strong>
         const parseBold = (str) => str.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -672,6 +737,9 @@ class ResultsPage {
     }
 
     // Audio Player Methods
+    /**
+     * Toggle audio play/pause state
+     */
     togglePlayPause() {
         if (!this.audioPlayer) return;
 
@@ -684,6 +752,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Update progress bar and time display during playback
+     */
     updateProgress() {
         if (!this.audioPlayer || !this.elements.progressBar) return;
 
@@ -699,12 +770,19 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Update total duration display when audio metadata loads
+     */
     updateDuration() {
         if (!this.audioPlayer || !this.elements.duration) return;
 
         this.elements.duration.textContent = this.formatTime(this.audioPlayer.duration);
     }
 
+    /**
+     * Seek to position in audio based on progress bar input
+     * @param {Event} e - Input event from progress bar
+     */
     seekAudio(e) {
         if (!this.audioPlayer) return;
 
@@ -712,6 +790,10 @@ class ResultsPage {
         this.audioPlayer.currentTime = time;
     }
 
+    /**
+     * Adjust audio volume
+     * @param {Event} e - Input event from volume bar
+     */
     changeVolume(e) {
         if (!this.audioPlayer) return;
 
@@ -723,6 +805,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Cycle through available playback speeds
+     */
     cycleSpeed() {
         const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
         const currentIndex = speeds.indexOf(this.playbackSpeed);
@@ -742,12 +827,19 @@ class ResultsPage {
         this.showToast(`Playback speed: ${this.playbackSpeed}x`, 'info');
     }
 
+    /**
+     * Skip forward or backward in audio
+     * @param {number} seconds - Seconds to skip (negative for backward)
+     */
     skip(seconds) {
         if (!this.audioPlayer) return;
 
         this.audioPlayer.currentTime += seconds;
     }
 
+    /**
+     * Toggle audio loop state
+     */
     toggleLoop() {
         this.isLooping = !this.isLooping;
 
@@ -762,12 +854,18 @@ class ResultsPage {
         this.showToast(this.isLooping ? 'Loop enabled' : 'Loop disabled', 'info');
     }
 
+    /**
+     * Handle audio playback completion
+     */
     handleAudioEnded() {
         if (!this.isLooping && this.elements.playPause) {
             this.elements.playPause.innerHTML = '<i class="fas fa-play"></i>';
         }
     }
 
+    /**
+     * Download the audio file
+     */
     downloadAudio() {
         if (!this.currentData) return;
 
@@ -782,6 +880,10 @@ class ResultsPage {
     }
 
     // Search Methods
+    /**
+     * Toggle search or translation panel visibility
+     * @param {string} panel - Panel type ('search' or 'translate')
+     */
     togglePanel(panel) {
         const panelElement = panel === 'search' ? this.elements.searchPanel : this.elements.translatePanel;
         if (panelElement) {
@@ -789,6 +891,10 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Close search or translation panel
+     * @param {string} panel - Panel type ('search' or 'translate')
+     */
     closePanel(panel) {
         const panelElement = panel === 'search' ? this.elements.searchPanel : this.elements.translatePanel;
         if (panelElement) {
@@ -796,6 +902,10 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Search transcript for text matches
+     * @param {string} query - Search query
+     */
     searchTranscript(query) {
         // Implementation for search functionality
         if (!query || !this.elements.transcript) {
@@ -824,6 +934,10 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Highlight search matches in transcript
+     * @param {string} query - Search query to highlight
+     */
     highlightMatches(query) {
         const transcriptText = this.currentData.transcription || this.currentData.transcript || '';
         const regex = new RegExp(`(${query})`, 'gi');
@@ -834,6 +948,10 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Navigate between search matches
+     * @param {number} direction - Direction (1 for next, -1 for previous)
+     */
     navigateSearch(direction) {
         if (this.searchMatches.length === 0) return;
 
@@ -852,6 +970,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Clear search highlighting and reset search state
+     */
     clearSearch() {
         this.searchMatches = [];
         this.currentMatchIndex = -1;
@@ -869,6 +990,9 @@ class ResultsPage {
     }
 
     // Translation Methods
+    /**
+     * Translate transcript and summary to selected language
+     */
     async translateTranscript() {
         const targetLang = this.elements.targetLanguage?.value;
 
@@ -987,6 +1111,9 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Hide translation panels and clear translated content
+     */
     hideTranslation() {
         if (this.elements.translatedTranscriptCard) {
             this.elements.translatedTranscriptCard.classList.add('hidden');
@@ -1000,6 +1127,10 @@ class ResultsPage {
         this.lastTranslatedLang = null;
     }
 
+    /**
+     * Read card content aloud using Web Speech API
+     * @param {string} cardType - Type of card to read (transcript, summary, etc.)
+     */
     speakCardText(cardType) {
         // Map card types to their text sources and button elements
         const cardConfig = {
@@ -1110,6 +1241,10 @@ class ResultsPage {
     }
 
     // Copy/Export Methods
+    /**
+     * Copy content to clipboard
+     * @param {string} type - Content type to copy
+     */
     copyToClipboard(type) {
         let text = '';
         let label = type;
@@ -1137,6 +1272,10 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Toggle export format dropdown menu
+     * @param {string} menuId - ID of the dropdown menu element
+     */
     toggleExportDropdown(menuId) {
         const menu = document.getElementById(menuId);
         if (!menu) return;
@@ -1149,6 +1288,11 @@ class ResultsPage {
         menu.classList.toggle('show');
     }
 
+    /**
+     * Export content in specified format
+     * @param {string} type - Content type to export
+     * @param {string} format - Export format (txt, pdf, docx, etc.)
+     */
     async exportInFormat(type, format) {
         const fileId = this.currentData?.id;
 
@@ -1225,12 +1369,21 @@ class ResultsPage {
         }
     }
 
+    /**
+     * Legacy export method - redirects to TXT export
+     * @param {string} type - Content type to export
+     */
     exportText(type) {
         // Legacy method - redirect to new format export with txt
         this.exportInFormat(type, 'txt');
     }
 
     // Utility Methods
+    /**
+     * Format file size bytes to human readable string
+     * @param {number} bytes - Size in bytes
+     * @returns {string} Formatted size (e.g., "1.5 MB")
+     */
     formatFileSize(bytes) {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -1239,11 +1392,21 @@ class ResultsPage {
         return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
     }
 
+    /**
+     * Format date string for display
+     * @param {string} dateString - ISO date string
+     * @returns {string} Formatted date/time
+     */
     formatDate(dateString) {
         const date = new Date(dateString);
         return date.toLocaleString();
     }
 
+    /**
+     * Format seconds to MM:SS format
+     * @param {number} seconds - Time in seconds
+     * @returns {string} Formatted time
+     */
     formatTime(seconds) {
         if (isNaN(seconds)) return '0:00';
 
@@ -1252,6 +1415,11 @@ class ResultsPage {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
+    /**
+     * Convert language code to display name
+     * @param {string} code - Language code (e.g., 'en')
+     * @returns {string} Language display name
+     */
     getLanguageName(code) {
         const languages = {
             'en': 'English', 'hi': 'Hindi', 'es': 'Spanish', 'fr': 'French',
@@ -1264,6 +1432,11 @@ class ResultsPage {
         return languages[code] || code.toUpperCase();
     }
 
+    /**
+     * Display toast notification
+     * @param {string} message - Message to display
+     * @param {string} type - Notification type (success, error, warning, info)
+     */
     showToast(message, type = 'info') {
         if (!this.elements.toastContainer) return;
 

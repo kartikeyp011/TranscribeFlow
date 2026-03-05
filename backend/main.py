@@ -49,6 +49,7 @@ from backend.schemas import UserCreate, UserLogin, Token, UpdateUsername, Change
 # Constants & Configuration
 # =====================================================
 
+# Common stop words to filter out during keyword extraction
 STOP_WORDS = {
     'the', 'a', 'an', 'and', 'but', 'or', 'if', 'then', 'else', 'when',
     'at', 'from', 'by', 'on', 'off', 'for', 'in', 'out', 'over', 'to',
@@ -65,6 +66,7 @@ STOP_WORDS = {
     'can', 'will', 'just', 'should', 'now'
 }
 
+# Positive sentiment word list for sentiment analysis
 POSITIVE_WORDS = {
     'good', 'great', 'awesome', 'excellent', 'happy', 'love', 'wonderful',
     'best', 'better', 'success', 'successful', 'win', 'winner', 'gain',
@@ -74,6 +76,7 @@ POSITIVE_WORDS = {
     'effective', 'productive', 'helpful', 'valuable', 'profitable', 'rewarding'
 }
 
+# Negative sentiment word list for sentiment analysis
 NEGATIVE_WORDS = {
     'bad', 'terrible', 'awful', 'worst', 'worse', 'fail', 'failure',
     'lose', 'loser', 'loss', 'negative', 'problem', 'error', 'issue',
@@ -87,6 +90,7 @@ NEGATIVE_WORDS = {
 # Content File Management
 # =====================================================
 
+# Directory for storing transcription content files (separate from DB for performance)
 CONTENT_DIR = "content_files"
 os.makedirs(CONTENT_DIR, exist_ok=True)
 
@@ -95,7 +99,10 @@ def get_content_path(filename: str) -> str:
     return os.path.join(CONTENT_DIR, filename)
 
 def save_content_file(data: dict) -> str:
-    """Save content data to a unique JSON file and return the filename"""
+    """
+    Save content data to a unique JSON file and return the filename.
+    This keeps large transcription data out of the database for better performance.
+    """
     filename = f"{uuid.uuid4()}.json"
     filepath = get_content_path(filename)
     with open(filepath, "w", encoding="utf-8") as f:
@@ -103,7 +110,7 @@ def save_content_file(data: dict) -> str:
     return filename
 
 def read_content_file(filename: str) -> dict:
-    """Read content data from a JSON file"""
+    """Read content data from a JSON file. Returns empty dict if file doesn't exist."""
     if not filename: return {}
     filepath = get_content_path(filename)
     if not os.path.exists(filepath): return {}
@@ -137,17 +144,18 @@ class DetectLanguageRequest(BaseModel):
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Store active websocket connections
+# Store active websocket connections for real-time log streaming
 active_connections: dict[str, WebSocket] = {}
 
-# Queue used to send logs to websockets
+# Queue used to send logs to websockets (async safe)
 log_queue: asyncio.Queue = asyncio.Queue()
 
-# Store main event loop reference
+# Store main event loop reference for thread-safe log forwarding
 main_loop: asyncio.AbstractEventLoop | None = None
 
 # Custom logging handler that forwards logs to websockets
 class WebSocketLogHandler(logging.Handler):
+    """Custom log handler that pushes log messages to all connected WebSocket clients."""
     def emit(self, record):
         if record.levelno != logging.INFO or not main_loop:
             return
@@ -167,6 +175,7 @@ logging.getLogger().addHandler(ws_handler)
 
 # Background task that sends logs to all websocket clients
 async def process_log_queue():
+    """Background worker that broadcasts log messages to all connected WebSocket clients."""
     while True:
         msg, level = await log_queue.get()
         dead = []
@@ -186,6 +195,7 @@ async def process_log_queue():
 # Application lifespan handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Manage application startup and shutdown tasks."""
     global main_loop
     main_loop = asyncio.get_running_loop()
     task = asyncio.create_task(process_log_queue())
@@ -220,7 +230,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for all origins
+# Enable CORS for all origins (adjust in production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -241,7 +251,7 @@ os.makedirs(FRONTEND_DIR, exist_ok=True)
 
 # File validation settings
 ALLOWED_EXTENSIONS = {".mp3", ".wav", ".m4a", ".flac", ".ogg"}
-MAX_FILE_SIZE = 25 * 1024 * 1024
+MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB limit
 
 # Serve static assets (CSS, JS, images)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -249,6 +259,10 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # WebSocket endpoint for live logs
 @app.websocket("/ws/logs/{request_id}")
 async def websocket_logs(ws: WebSocket, request_id: str):
+    """
+    WebSocket endpoint for real-time log streaming.
+    Clients can connect with a request_id to receive processing logs.
+    """
     await ws.accept()
     active_connections[request_id] = ws
     try:
@@ -394,7 +408,11 @@ async def upload_audio(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
-    """Upload and process audio file"""
+    """
+    Upload and process audio file synchronously.
+    Handles file validation, transcription, optional speaker diarization, and summarization.
+    Returns processed content immediately.
+    """
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(400, "Unsupported file type")
@@ -524,7 +542,10 @@ async def batch_upload_audio(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Upload multiple files and process them in background"""
+    """
+    Upload multiple files and process them in background.
+    Returns immediately with batch ID while processing continues asynchronously.
+    """
     
     if len(files) > 10:
         raise HTTPException(400, "Maximum 10 files per batch")
@@ -603,7 +624,11 @@ def process_audio_file(
     enable_diarization = False,
     num_speakers: Optional[int] = None
 ):
-    """Background task to process audio file"""
+    """
+    Background task to process audio file.
+    Runs transcription, optional diarization, and summarization.
+    Saves results to content file and metadata to database.
+    """
     from backend.database import SessionLocal
     
     # Ensure enable_diarization is a boolean
@@ -687,7 +712,10 @@ def process_audio_file(
 
 @app.get("/api/stream/{filename}")
 async def stream_audio(filename: str, request: Request):
-    """Stream audio file with Range support for seeking"""
+    """
+    Stream audio file with Range support for seeking.
+    Handles partial content requests for audio players that need seeking capability.
+    """
     path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(path):
         raise HTTPException(404, "File not found")
@@ -789,7 +817,10 @@ async def get_user_files(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Get all files for the current user with pinned files first"""
+    """
+    Get all files for the current user with pinned files first.
+    Supports pagination, search, and optional content loading for performance.
+    """
     query = db.query(db_models.File).filter(
         db_models.File.user_id == current_user.id,
         db_models.File.is_deleted == False
@@ -885,7 +916,7 @@ async def get_file(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Get a single file by ID"""
+    """Get a single file by ID with all associated content"""
     file = crud.get_file_by_id(db, file_id, current_user.id)
     
     if not file:
@@ -988,7 +1019,10 @@ async def export_file(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Export transcript in various formats"""
+    """
+    Export transcript in various formats.
+    Supports TXT, PDF, DOCX, and SRT with options to export transcript, summary, or both.
+    """
     file = crud.get_file_by_id(db, file_id, current_user.id)
     
     if not file:
@@ -1106,7 +1140,11 @@ def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Get dashboard statistics for the current user"""
+    """
+    Get dashboard statistics for the current user.
+    Calculates usage metrics, trends, common keywords, sentiment analysis,
+    and productivity score based on transcription activity.
+    """
     from sqlalchemy import func as sqlfunc
     from collections import Counter
     import re

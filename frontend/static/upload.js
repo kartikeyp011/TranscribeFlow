@@ -1,14 +1,19 @@
 // Upload Page JavaScript - Complete Version with Authentication and File History
+
+/**
+ * Main controller class for the audio upload page
+ * Handles file selection, batch uploads, WebSocket logs, and file history
+ */
 class UploadPage {
     constructor() {
-        this.currentFile = null;
-        this.selectedFiles = []; // Batch file tracking
-        this.isProcessing = false;
-        this.ws = null;
-        this.requestId = null;
-        this.logs = [];
-        this.lastScrollTop = 0;
-        this.isNavHidden = false;
+        this.currentFile = null;              // Currently processed file data
+        this.selectedFiles = [];               // Batch file tracking
+        this.isProcessing = false;              // Processing state flag
+        this.ws = null;                         // WebSocket connection for real-time logs
+        this.requestId = null;                   // Unique request ID for WebSocket connection
+        this.logs = [];                          // Array of log entries
+        this.lastScrollTop = 0;                  // Track scroll position for navbar hide/show
+        this.isNavHidden = false;                 // Navbar visibility state
 
         this.checkAuthentication();
 
@@ -20,6 +25,10 @@ class UploadPage {
         this.loadFileHistory();
     }
 
+    /**
+     * Verify user authentication status
+     * Redirects to login if no valid token found
+     */
     checkAuthentication() {
         console.log('🔐 Checking authentication...');
         const token = localStorage.getItem('access_token');
@@ -31,6 +40,13 @@ class UploadPage {
         }
     }
 
+    /**
+     * Wrapper for authenticated API requests
+     * Automatically adds auth token and handles 401 responses
+     * @param {string} url - API endpoint URL
+     * @param {Object} options - Fetch options
+     * @returns {Promise<Response|null>} Fetch response or null if unauthorized
+     */
     async fetchWithAuth(url, options = {}) {
         const token = localStorage.getItem('access_token');
 
@@ -64,6 +80,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Fetch and display current user information
+     */
     async fetchUserInfo() {
         try {
             const response = await this.fetchWithAuth('/api/auth/me');
@@ -85,6 +104,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Cache DOM elements for frequent access
+     */
     initializeElements() {
         this.elements = {
             uploadForm: document.getElementById('uploadForm'),
@@ -140,6 +162,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Initialize all event listeners for user interactions
+     */
     setupEventListeners() {
         if (this.elements.uploadForm) {
             this.elements.uploadForm.addEventListener('submit', (e) => this.handleUpload(e));
@@ -229,6 +254,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Setup scroll behavior to hide/show navigation bar
+     */
     setupNavigationScroll() {
         const scrollThreshold = 50;
 
@@ -253,6 +281,10 @@ class UploadPage {
         });
     }
 
+    /**
+     * Handle file selection from input or drop
+     * @param {Event} e - Change event from file input
+     */
     handleFileSelect(e) {
         const files = Array.from(e.target.files);
         console.log('📁 Files selected:', files.length);
@@ -306,6 +338,10 @@ class UploadPage {
         }
     }
 
+    /**
+     * Handle drag over event for dropzone
+     * @param {DragEvent} e - Drag event
+     */
     handleDragOver(e) {
         e.preventDefault();
         if (this.elements.dropzone) {
@@ -314,6 +350,10 @@ class UploadPage {
         }
     }
 
+    /**
+     * Handle drag leave event for dropzone
+     * @param {DragEvent} e - Drag event
+     */
     handleDragLeave(e) {
         e.preventDefault();
         if (this.elements.dropzone) {
@@ -322,6 +362,10 @@ class UploadPage {
         }
     }
 
+    /**
+     * Handle file drop event
+     * @param {DragEvent} e - Drop event
+     */
     handleDrop(e) {
         e.preventDefault();
         if (this.elements.dropzone) {
@@ -336,6 +380,11 @@ class UploadPage {
         }
     }
 
+    /**
+     * Validate file type and size
+     * @param {File} file - File to validate
+     * @returns {boolean} True if file is valid
+     */
     validateFile(file) {
         const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/ogg', 'audio/x-m4a', 'audio/mpeg'];
         const maxSize = 25 * 1024 * 1024;
@@ -345,6 +394,9 @@ class UploadPage {
         return (validTypes.includes(file.type) || validExtensions.includes(fileExtension)) && file.size <= maxSize;
     }
 
+    /**
+     * Reset file selection UI and state
+     */
     resetFileSelection() {
         if (this.elements.audioFileInput) {
             this.elements.audioFileInput.value = '';
@@ -366,6 +418,9 @@ class UploadPage {
     // Batch File List Display
     // ==========================================
 
+    /**
+     * Render the list of selected files for batch upload
+     */
     renderBatchFileList() {
         if (!this.elements.batchFileList) return;
 
@@ -407,6 +462,10 @@ class UploadPage {
         });
     }
 
+    /**
+     * Remove a file from the batch selection
+     * @param {number} index - Index of file to remove
+     */
     removeFileFromBatch(index) {
         this.selectedFiles.splice(index, 1);
 
@@ -430,6 +489,9 @@ class UploadPage {
         this.addLog(`🗑️ Removed file, ${this.selectedFiles.length} remaining`, 'info');
     }
 
+    /**
+     * Hide the batch file list
+     */
     hideBatchFileList() {
         if (this.elements.batchFileList) {
             this.elements.batchFileList.classList.add('hidden');
@@ -437,6 +499,10 @@ class UploadPage {
         }
     }
 
+    /**
+     * Handle form submission for upload
+     * @param {Event} e - Submit event
+     */
     async handleUpload(e) {
         e.preventDefault();
 
@@ -469,6 +535,10 @@ class UploadPage {
         }
     }
 
+    /**
+     * Process a single audio file
+     * @param {File} file - Audio file to process
+     */
     async processAudioFile(file) {
         this.isProcessing = true;
         this.setProcessingState(true);
@@ -551,6 +621,10 @@ class UploadPage {
     // Batch Upload
     // ==========================================
 
+    /**
+     * Handle batch upload of multiple files
+     * Processes files sequentially with individual progress tracking
+     */
     async handleBatchUpload() {
         this.isProcessing = true;
         this.setProcessingState(true);
@@ -672,6 +746,11 @@ class UploadPage {
         }, 2000);
     }
 
+    /**
+     * Display batch processing progress in real-time
+     * @param {Array} allFiles - All files in the batch
+     * @param {Array} completedResults - Results for completed files
+     */
     showBatchResultsProgress(allFiles, completedResults) {
         if (!this.elements.batchResultsReady) return;
 
@@ -727,6 +806,13 @@ class UploadPage {
         this.elements.batchResultsReady.classList.remove('hidden');
     }
 
+    /**
+     * Display final batch completion status
+     * @param {Array} results - Array of file results
+     * @param {number} successCount - Number of successful files
+     * @param {number} errorCount - Number of failed files
+     * @param {number} totalFiles - Total number of files
+     */
     showBatchComplete(results, successCount, errorCount, totalFiles) {
         if (!this.elements.batchResultsReady) return;
 
@@ -771,12 +857,19 @@ class UploadPage {
         this.elements.batchResultsReady.classList.remove('hidden');
     }
 
+    /**
+     * Hide batch results panel
+     */
     hideBatchResults() {
         if (this.elements.batchResultsReady) {
             this.elements.batchResultsReady.classList.add('hidden');
         }
     }
 
+    /**
+     * Establish WebSocket connection for real-time logs
+     * @param {string} requestId - Unique request ID for this upload session
+     */
     connectWebSocket(requestId) {
         if (this.ws) this.ws.close();
 
@@ -805,6 +898,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Load user's file history from API
+     */
     async loadFileHistory() {
         if (!this.elements.fileHistory) {
             console.log('File history container not found, skipping');
@@ -828,6 +924,10 @@ class UploadPage {
         }
     }
 
+    /**
+     * Display file history in the UI
+     * @param {Array} files - Array of file objects from API
+     */
     displayFileHistory(files) {
         if (!this.elements.fileHistory) return;
 
@@ -848,6 +948,11 @@ class UploadPage {
         this.attachFileHistoryHandlers();
     }
 
+    /**
+     * Create HTML for a file history item
+     * @param {Object} file - File object from API
+     * @returns {string} HTML string
+     */
     createFileHistoryItem(file) {
         const fileSize = this.formatFileSize(file.file_size || file.size || 0);
         const processedDate = this.formatDate(file.created_at || file.timestamp);
@@ -890,6 +995,9 @@ class UploadPage {
         `;
     }
 
+    /**
+     * Attach event handlers to file history items
+     */
     attachFileHistoryHandlers() {
         document.querySelectorAll('.btn-view').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -906,6 +1014,10 @@ class UploadPage {
         });
     }
 
+    /**
+     * Delete a file from history
+     * @param {string} fileId - ID of file to delete
+     */
     async deleteFile(fileId) {
         if (!confirm('Are you sure you want to delete this file?')) return;
 
@@ -927,6 +1039,11 @@ class UploadPage {
         }
     }
 
+    /**
+     * Format file size bytes to human readable string
+     * @param {number} bytes - Size in bytes
+     * @returns {string} Formatted size
+     */
     formatFileSize(bytes) {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -935,6 +1052,11 @@ class UploadPage {
         return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
     }
 
+    /**
+     * Format date for display with relative time
+     * @param {string} dateString - ISO date string
+     * @returns {string} Formatted date
+     */
     formatDate(dateString) {
         if (!dateString) return 'Unknown';
 
@@ -957,6 +1079,11 @@ class UploadPage {
         });
     }
 
+    /**
+     * Convert language code to display name
+     * @param {string} code - Language code
+     * @returns {string} Language display name
+     */
     getLanguageName(code) {
         const languages = {
             'en': 'English', 'hi': 'Hindi', 'es': 'Spanish', 'fr': 'French',
@@ -969,18 +1096,27 @@ class UploadPage {
         return languages[code] || code.toUpperCase();
     }
 
+    /**
+     * Show the results ready panel
+     */
     showResultsReady() {
         if (this.elements.resultsReady) {
             this.elements.resultsReady.classList.remove('hidden');
         }
     }
 
+    /**
+     * Hide the results ready panel
+     */
     hideResultsReady() {
         if (this.elements.resultsReady) {
             this.elements.resultsReady.classList.add('hidden');
         }
     }
 
+    /**
+     * Navigate to results page for the processed file
+     */
     viewResults() {
         if (this.currentFile) {
             window.location.href = '/results?id=' + this.currentFile.id;
@@ -994,6 +1130,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Reset the page for another upload
+     */
     processAnother() {
         if (this.elements.uploadForm) {
             this.elements.uploadForm.reset();
@@ -1004,6 +1143,11 @@ class UploadPage {
         this.addLog('🔄 Ready for new upload', 'info');
     }
 
+    /**
+     * Add a log entry to the logs panel
+     * @param {string} message - Log message
+     * @param {string} level - Log level (info, success, error, warning)
+     */
     addLog(message, level = 'info') {
         if (!this.elements.logsContent) return;
 
@@ -1032,6 +1176,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Clear all log entries
+     */
     clearLogs() {
         if (this.elements.logsContent) {
             const currentTime = new Date().toLocaleTimeString();
@@ -1047,6 +1194,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Clear all files from the user's account
+     */
     async clearAll() {
         if (!confirm('Are you sure you want to clear all files?')) return;
 
@@ -1070,6 +1220,9 @@ class UploadPage {
         }
     }
 
+    /**
+     * Reset the entire upload page to initial state
+     */
     resetUploadPage() {
         if (this.elements.uploadForm) {
             this.elements.uploadForm.reset();
@@ -1083,6 +1236,10 @@ class UploadPage {
         }
     }
 
+    /**
+     * Update UI for processing state
+     * @param {boolean} processing - Whether processing is active
+     */
     setProcessingState(processing) {
         if (this.elements.processBtn) {
             this.elements.processBtn.disabled = processing;
@@ -1105,22 +1262,37 @@ class UploadPage {
         }
     }
 
+    /**
+     * Show processing indicator
+     */
     showProcessing() {
         if (this.elements.loadingIndicator) {
             this.elements.loadingIndicator.classList.remove('hidden');
         }
     }
 
+    /**
+     * Hide processing indicator
+     */
     hideProcessing() {
         if (this.elements.loadingIndicator) {
             this.elements.loadingIndicator.classList.add('hidden');
         }
     }
 
+    /**
+     * Generate a unique request ID for WebSocket connection
+     * @returns {string} Unique request ID
+     */
     generateRequestId() {
         return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
+    /**
+     * Display a toast notification
+     * @param {string} message - Message to display
+     * @param {string} type - Toast type (success, error, warning, info)
+     */
     showToast(message, type = 'info') {
         if (!this.elements.toastContainer) return;
 
@@ -1152,6 +1324,9 @@ class UploadPage {
         }, 3000);
     }
 
+    /**
+     * Initialize the application with default logs
+     */
     async initializeApp() {
         const currentTime = new Date().toLocaleTimeString();
         const previousTime = new Date(Date.now() - 7000).toLocaleTimeString();
@@ -1178,6 +1353,9 @@ class UploadPage {
         await this.checkBackendHealth();
     }
 
+    /**
+     * Check if the backend API is healthy
+     */
     async checkBackendHealth() {
         try {
             const response = await this.fetchWithAuth('/api/health');

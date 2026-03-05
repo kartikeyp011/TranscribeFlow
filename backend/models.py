@@ -20,7 +20,14 @@ logger = logging.getLogger(__name__)
 
 # Transcription, summarization, and translation pipeline
 class TranscribeFlowPipeline:
-
+    """
+    Core pipeline class that handles all AI/ML operations:
+    - Audio transcription using Groq/Whisper
+    - Text summarization with multiple format options
+    - Language detection and translation
+    - Speaker diarization for multi-speaker audio
+    """
+    
     # Initialize API clients and cache
     def __init__(self):
         logger.info("🚀 Initializing TranscribeFlowPipeline...")
@@ -36,15 +43,21 @@ class TranscribeFlowPipeline:
         self.hf_headers = {"Authorization": f"Bearer {self.hf_key}"}
         self.hf_api_url = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
 
+        # Cache translations to avoid redundant API calls
         self.translation_cache = {}
         logger.info("🎯 Pipeline initialized\n")
 
 
     # Audio transcription with timestamps
     def transcribe(self, audio_input, language="en") -> dict:
+        """
+        Transcribe audio using Groq's Whisper implementation.
+        Returns text, word-level timestamps, and segment-level timestamps.
+        Supports both file paths and raw bytes input.
+        """
         logger.info(f"🎙️ Transcribing (lang={language})...")
         try:
-            # File path
+            # Handle file path input
             if isinstance(audio_input, str):
                 if not os.path.exists(audio_input):
                     raise FileNotFoundError(audio_input)
@@ -58,7 +71,7 @@ class TranscribeFlowPipeline:
                         temperature=0
                     )
             
-            # Bytes
+            # Handle raw bytes input (from upload)
             elif isinstance(audio_input, (bytes, bytearray)):
                 with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp:
                     temp.write(audio_input)
@@ -112,7 +125,10 @@ class TranscribeFlowPipeline:
 
     # Clean and normalize LLM output to prevent encoding issues
     def _clean_llm_output(self, text: str) -> str:
-        """Clean and normalize LLM output to prevent encoding issues."""
+        """
+        Clean and normalize LLM output to prevent encoding issues.
+        Replaces Unicode special characters with ASCII equivalents that render properly.
+        """
         # Replace Unicode bullets/dashes with ASCII equivalents
         replacements = {
             '\u2022': '* ',  # bullet
@@ -154,6 +170,9 @@ class TranscribeFlowPipeline:
         - action: Action items
         - study: Study notes
         - blog: Blog-ready summary
+        
+        Uses Groq's Llama 3.1 with fallback to Hugging Face if needed.
+        Handles long transcripts via chunked processing.
         """
         logger.info(f"📝 Summarizing in '{mode}' mode (text length: {len(text)} chars)...")
         
@@ -177,7 +196,7 @@ class TranscribeFlowPipeline:
         return self._summarize_single(text, mode, system_prompt, max_tokens)
     
     def _summarize_single(self, text: str, mode: str, system_prompt: str, max_tokens: int) -> str:
-        """Summarize a single chunk of text."""
+        """Summarize a single chunk of text using Groq."""
         try:
             completion = self.groq_client.chat.completions.create(
                 model="llama-3.1-8b-instant",
@@ -217,7 +236,10 @@ class TranscribeFlowPipeline:
             return self._summarize_hf(text, max_tokens)
     
     def _summarize_chunked(self, text: str, mode: str, system_prompt: str, max_tokens: int, max_input_chars: int) -> str:
-        """Summarize long text by splitting into chunks, summarizing each, then combining."""
+        """
+        Summarize long text by splitting into chunks, summarizing each, then combining.
+        Prevents token limits from being exceeded.
+        """
         logger.info(f"📄 Text too long ({len(text)} chars), using chunked summarization...")
         
         # Split text into chunks at sentence boundaries
@@ -286,6 +308,7 @@ class TranscribeFlowPipeline:
 
     # Hugging Face fallback summarization
     def _summarize_hf(self, text, max_tokens):
+        """Fallback summarization using Hugging Face's BART model."""
         payload = {
             "inputs": text[:4096],
             "parameters": {"max_length": max_tokens, "min_length": 30, "do_sample": False}
@@ -311,6 +334,10 @@ class TranscribeFlowPipeline:
 
     # Language detection
     def detect_language(self, text: str) -> dict:
+        """
+        Detect the language of a text using langdetect.
+        Returns both ISO code and human-readable name.
+        """
         try:
             code = detect(text)
             names = {
@@ -331,6 +358,11 @@ class TranscribeFlowPipeline:
 
     # Text translation with caching and fallbacks
     def translate_text(self, text: str, source_lang="auto", target_lang="en") -> dict:
+        """
+        Translate text between languages with caching.
+        Uses Groq for general translation, Google Translate for Hindi.
+        Falls back gracefully if primary method fails.
+        """
         try:
             cache_key = (text, source_lang, target_lang)
             if cache_key in self.translation_cache:
@@ -351,6 +383,7 @@ class TranscribeFlowPipeline:
                 self.translation_cache[cache_key] = result
                 return result
 
+            # Google Translate handles Hindi better
             if source_lang == "hi" or target_lang == "hi":
                 translated = self._google_translate(text, source_lang, target_lang)
                 result = self._build_result(text, translated, source_lang, target_lang)
@@ -377,6 +410,7 @@ class TranscribeFlowPipeline:
 
     # Groq-based translation helper
     def _groq_translate(self, text, src, tgt):
+        """Translate using Groq's Llama model."""
         names = {
             "en": "English",
             "hi": "Hindi",
@@ -409,6 +443,10 @@ Text:
 
     # Google Translate helper with chunking
     def _google_translate(self, text, src, tgt):
+        """
+        Translate using Google Translate.
+        Handles long text by splitting into chunks of 4000 chars.
+        """
         translator = GoogleTranslator(source=src, target=tgt)
         max_len = 4000
 
@@ -422,6 +460,7 @@ Text:
 
     # Standardized translation result builder
     def _build_result(self, orig, trans, src, tgt):
+        """Build a consistent translation result structure."""
         return {
             "original": orig,
             "translated": trans,
@@ -432,8 +471,9 @@ Text:
 
     def diarize_speakers(self, audio_path: str, num_speakers: int = None) -> list:
         """
-        Detect different speakers in audio
-        Returns: List of {speaker, start, end, text} segments
+        Detect different speakers in audio using pyannote.audio.
+        Returns list of {speaker, start, end} segments.
+        Handles audio preprocessing (resampling, mono conversion).
         """
         try:
             logger.info("👥 Detecting speakers...")
@@ -519,7 +559,10 @@ Text:
     def merge_diarization_with_transcript(self, transcript_words, speaker_segments, transcript_segments=None, full_text=""):
         """
         Merge speaker diarization with transcript.
-        Supports word-level, segment-level, or raw text fallback.
+        Supports three strategies in order of preference:
+        1. Word-level timestamps (most precise)
+        2. Segment-level timestamps (good fallback)
+        3. Raw text splitting (last resort)
         
         Args:
             transcript_words: list of {word, start, end} from Whisper (may be empty)
@@ -553,7 +596,10 @@ Text:
         return []
     
     def _merge_with_words(self, transcript_words, speaker_segments):
-        """Merge using word-level timestamps (most precise)."""
+        """
+        Merge using word-level timestamps (most precise).
+        Assigns a speaker to each word based on timestamp overlap.
+        """
         # Assign speakers to words based on timestamps
         for word in transcript_words:
             word_start = word.get('start', 0)
@@ -572,7 +618,10 @@ Text:
         return self._group_by_speaker(transcript_words, key='word')
     
     def _merge_with_segments(self, transcript_segments, speaker_segments):
-        """Merge using segment-level timestamps."""
+        """
+        Merge using segment-level timestamps.
+        Assigns speakers based on overlap duration.
+        """
         result_words = []
         for seg in transcript_segments:
             seg_start = seg.get('start', 0)
@@ -610,7 +659,10 @@ Text:
         return self._group_by_speaker(result_words, key='word')
     
     def _merge_with_text(self, full_text, speaker_segments):
-        """Fallback: assign text proportionally to speakers by time."""
+        """
+        Fallback merge strategy: assign text proportionally to speakers by time.
+        Used when no timestamps are available.
+        """
         if not full_text.strip():
             return []
         
@@ -666,7 +718,10 @@ Text:
         return result
     
     def _group_by_speaker(self, items, key='word'):
-        """Group consecutive items by speaker into speaker turns."""
+        """
+        Group consecutive items by speaker into speaker turns.
+        Takes a list of items (words or segments) and groups them by speaker.
+        """
         formatted_transcript = []
         current_speaker = None
         current_text = []
@@ -696,7 +751,8 @@ Text:
 
     def format_transcript_with_speakers(self, speaker_transcript):
         """
-        Format transcript with speaker labels for display
+        Format transcript with speaker labels for display.
+        Returns a readable string with "Speaker X: text" format.
         """
         formatted = []
         
@@ -711,4 +767,5 @@ Text:
 
 
 # Singleton pipeline instance
+# This ensures we reuse the same client instances across requests
 pipeline = TranscribeFlowPipeline()

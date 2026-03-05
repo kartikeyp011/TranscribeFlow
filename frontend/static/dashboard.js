@@ -11,6 +11,11 @@
     // ═══════════════════════════════════════════════════
     // FETCH DASHBOARD DATA FROM API
     // ═══════════════════════════════════════════════════
+    /**
+     * Fetches dashboard statistics from the backend API
+     * Uses authenticated fetch if available, falls back to manual token injection
+     * @returns {Promise<Object|null} Dashboard stats object or null if fetch fails
+     */
     async function fetchDashboardData() {
         try {
             // Use the global fetchWithAuth from sidebar.js
@@ -51,6 +56,11 @@
     // ═══════════════════════════════════════════════════
     // POPULATE UI WITH API DATA
     // ═══════════════════════════════════════════════════
+    /**
+     * Updates all dashboard UI elements with fetched data
+     * Handles counters, trends, progress bars, topics, sentiment, and productivity
+     * @param {Object} data - Dashboard statistics from API
+     */
     function populateDashboard(data) {
         if (!data) { console.warn('[Dashboard] No data received'); return; }
 
@@ -96,6 +106,12 @@
     // ═══════════════════════════════════════════════════
     // ANIMATED COUNTER (animate from 0 → target)
     // ═══════════════════════════════════════════════════
+    /**
+     * Animates a numeric counter from 0 to target value
+     * Uses requestAnimationFrame for smooth easing animation
+     * @param {string} elementId - DOM element ID containing the counter
+     * @param {number} target - Target value to count up to
+     */
     function animateCounter(elementId, target) {
         const el = document.getElementById(elementId);
         if (!el) { console.warn('[Counter] Element not found:', elementId); return; }
@@ -132,6 +148,11 @@
     // ═══════════════════════════════════════════════════
     // TREND BADGES (up / down / stable)
     // ═══════════════════════════════════════════════════
+    /**
+     * Updates trend badge with appropriate styling and icon based on percentage change
+     * @param {string} elementId - DOM element ID for the trend badge
+     * @param {number} pct - Percentage change (positive, negative, or zero)
+     */
     function setTrend(elementId, pct) {
         const el = document.getElementById(elementId);
         if (!el) return;
@@ -154,6 +175,11 @@
     // ═══════════════════════════════════════════════════
     // PROGRESS BAR (quota)
     // ═══════════════════════════════════════════════════
+    /**
+     * Animates quota usage progress bar and percentage label
+     * Delays animation to sync with other dashboard animations
+     * @param {number} target - Target percentage for quota usage
+     */
     function animateProgressBar(target) {
         const bar = document.getElementById('quotaBar');
         const label = document.getElementById('quotaPercent');
@@ -185,6 +211,10 @@
     // ═══════════════════════════════════════════════════
     // COMMON TOPICS / KEYWORDS
     // ═══════════════════════════════════════════════════
+    /**
+     * Renders common keywords as interactive tag chips
+     * @param {string[]} keywords - Array of keyword strings from API
+     */
     function populateTopics(keywords) {
         const container = document.getElementById('topicsContainer');
         if (!container) return;
@@ -207,6 +237,12 @@
     // ═══════════════════════════════════════════════════
     // SENTIMENT BARS
     // ═══════════════════════════════════════════════════
+    /**
+     * Updates sentiment analysis bars with current percentages
+     * Forces reflow to restart CSS animations for visual effect
+     * @param {string} key - Sentiment category (Pos, Neu, Neg)
+     * @param {number} pct - Percentage value for this sentiment
+     */
     function setSentiment(key, pct) {
         const bar = document.getElementById(`sentiment${key}Bar`);
         const label = document.getElementById(`sentiment${key}Pct`);
@@ -224,6 +260,11 @@
     // ═══════════════════════════════════════════════════
     // PRODUCTIVITY RING (conic-gradient)
     // ═══════════════════════════════════════════════════
+    /**
+     * Animates productivity ring using conic-gradient
+     * Smoothly transitions from 0 to target percentage
+     * @param {number} target - Target productivity score (0-100)
+     */
     function animateProductivity(target) {
         const ring = document.getElementById('productivityRing');
         const valueEl = document.getElementById('productivityValue');
@@ -260,6 +301,7 @@
     // ═══════════════════════════════════════════════════
     // CHATBOT
     // ═══════════════════════════════════════════════════
+    // Predefined responses for the support chatbot
     const CHATBOT_RESPONSES = [
         "That's a great question! Let me look into that for you. 🔍",
         "Sure! You can upload audio files from the Upload page. Supported formats include MP3, WAV, M4A, and OGG.",
@@ -271,6 +313,10 @@
         "You can export your transcripts in multiple formats including TXT, DOCX, PDF, and SRT.",
     ];
 
+    /**
+     * Initializes chatbot functionality with toggle button and message handling
+     * Sets up event listeners for sending messages and keyboard shortcuts
+     */
     function initChatbot() {
         const toggleBtn = document.getElementById('chatbotToggle');
         const closeBtn = document.getElementById('chatbotClose');
@@ -345,6 +391,10 @@
     // ═══════════════════════════════════════════════════
     // QUICK ACTIONS
     // ═══════════════════════════════════════════════════
+    /**
+     * Sets up click handlers for quick action buttons
+     * Redirects users to relevant sections of the application
+     */
     function initQuickActions() {
         const uploadAction = document.getElementById('actionUpload');
         const historyAction = document.getElementById('actionHistory');
@@ -365,6 +415,11 @@
     // ═══════════════════════════════════════════════════
     // STARRED FILES
     // ═══════════════════════════════════════════════════
+    /**
+     * Fetches and displays user's starred files
+     * Optimized to exclude transcript content for faster loading
+     * Shows up to 6 most recent starred files
+     */
     async function fetchStarredFiles() {
         const loader = document.getElementById('starredFilesLoader');
         const container = document.getElementById('starredFilesContainer');
@@ -419,6 +474,11 @@
         }
     }
 
+    /**
+     * Creates HTML markup for a file card in starred files section
+     * @param {Object} file - File object from API
+     * @returns {string} HTML string for the file card
+     */
     function createFileCard(file) {
         const date = new Date(file.created_at).toLocaleDateString('en-US', {
             month: 'short', day: 'numeric'
@@ -450,6 +510,10 @@
         `;
     }
 
+    /**
+     * Attaches click event listeners to file cards and view buttons
+     * Handles navigation to detailed results page
+     */
     function attachCardListeners() {
         document.querySelectorAll('.view-btn-sm').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -470,6 +534,10 @@
     // ═══════════════════════════════════════════════════
     // INIT
     // ═══════════════════════════════════════════════════
+    /**
+     * Main initialization function
+     * Loads starred files, sets up interactive components, fetches and displays dashboard data
+     */
     async function init() {
         populateTopics([]); // clear topics initially
         fetchStarredFiles(); // Load starred files specifically

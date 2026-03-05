@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | TranscribeFlow</title>
+    <title>History | TranscribeFlow</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/history.css">
     <link rel="stylesheet" href="/static/sidebar.css">
@@ -18,10 +18,10 @@
 <body>
     <div class="app-container">
 
-        <!-- Main Content -->
+        <!-- Main content area -->
         <main class="main-content dashboard-page">
 
-            <!-- Dashboard Header -->
+            <!-- Page header with title and refresh -->
             <div class="dashboard-header">
                 <div class="container">
                     <div class="header-content">
@@ -38,7 +38,7 @@
                 </div>
             </div>
 
-            <!-- Stats Cards -->
+            <!-- Statistics overview cards -->
             <div class="stats-section">
                 <div class="container">
                     <div class="stats-grid">
@@ -85,7 +85,7 @@
                 </div>
             </div>
 
-            <!-- Search and Filters -->
+            <!-- Search and filter controls -->
             <div class="filters-section">
                 <div class="container">
                     <div class="filters-bar">
@@ -121,17 +121,17 @@
                 </div>
             </div>
 
-            <!-- Files Section -->
+            <!-- Files list container -->
             <div class="files-section">
                 <div class="container">
 
-                    <!-- Loading State -->
+                    <!-- Loading indicator -->
                     <div id="loadingState" class="loading-state">
                         <div class="spinner-large"></div>
                         <p>Loading your files...</p>
                     </div>
 
-                    <!-- Empty State -->
+                    <!-- Empty state - no files yet -->
                     <div id="emptyState" class="empty-state hidden">
                         <div class="empty-icon">
                             <i class="fas fa-folder-open"></i>
@@ -144,12 +144,12 @@
                         </a>
                     </div>
 
-                    <!-- Files Grid -->
+                    <!-- Dynamic files grid/list -->
                     <div id="filesGrid" class="files-grid hidden">
                         <!-- Files will be loaded here dynamically -->
                     </div>
 
-                    <!-- Pagination -->
+                    <!-- Pagination controls -->
                     <div id="pagination" class="pagination hidden">
                         <button id="prevBtn" class="btn-outline" disabled>
                             <i class="fas fa-chevron-left"></i>
@@ -167,10 +167,10 @@
 
         </main>
 
-        <!-- Toast Container -->
+        <!-- Notification toast container -->
         <div id="toastContainer" class="toast-container"></div>
 
-        <!-- Delete Confirmation Modal -->
+        <!-- Delete confirmation modal -->
         <div id="deleteModal" class="modal hidden">
             <div class="modal-overlay" onclick="closeDeleteModal()"></div>
             <div class="modal-content">
@@ -207,13 +207,12 @@
 
     <script src="/static/sidebar.js"></script>
     <script src="/static/history.js"></script>
+    <!-- Authentication check -->
     <script>
-        // Auth check
         const token = localStorage.getItem('access_token');
         if (!token) {
             window.location.href = '/login';
         }
-        // fetchWithAuth and logout are provided by sidebar.js
     </script>
 </body>
 
