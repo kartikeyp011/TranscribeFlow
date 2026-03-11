@@ -6,8 +6,8 @@ TranscribeFlow is a modern, full-stack web application designed to transform aud
 
 ![Project Status](https://img.shields.io/badge/Status-Active_Development-blue?style=for-the-badge&logo=github)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge&logo=open-source-initiative)
-![Python](https://img.shields.io/badge/Python-3.10+-yellow?style=for-the-badge&logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi)
+![Python](https://img.shields.io/badge/Python-3.11.9-yellow?style=for-the-badge&logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-009688?style=for-the-badge&logo=fastapi)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=for-the-badge&logo=mysql)
 
 ---
@@ -16,7 +16,7 @@ TranscribeFlow is a modern, full-stack web application designed to transform aud
 
 ### 🎧 Core Intelligence
 -   **High-Accuracy Transcription:** Powered by **Whisper Large-v3-turbo** via Groq for lightning-fast, industry-leading speech recognition.
--   **Speaker Diarization:** Automatically identifies "Who spoke when" using **Pyannote Audio 3.1**, distinguishing multiple speakers in conversations with high precision.
+-   **Speaker Diarization:** Automatically identifies "Who spoke when" using **Pyannote Audio 4.0.4**, distinguishing multiple speakers in conversations with high precision.
 -   **Smart Summarization:** Generates concise summaries using **Llama 3.1 8B Instant** (Groq). Supports multiple modes:
     -   *Bullet Points* (Default)
     -   *Meeting Minutes* (Attendees, Decisions, Next Steps)
@@ -44,21 +44,21 @@ TranscribeFlow is a modern, full-stack web application designed to transform aud
 ### 🛡️ Security & Reliability
 -   **User Authentication:** Secure signup/login system with **JWT** (JSON Web Tokens) and password hashing.
 -   **Robust Backend:** Built on **FastAPI** with **SQLAlchemy ORM** for reliable data handling.
--   **Data Persistence:** **MySQL** database integration for scalable storage of user profiles and transcription history.
+-   **Data Persistence:** **MySQL** database integration for user profiles and file metadata, with scalable JSON file storage for transcript content.
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Backend
--   **Framework:** FastAPI (Python 3.10+)
+-   **Framework:** FastAPI (Python 3.11.9)
 -   **AI Engines:**
     -   *Transcription:* **Whisper-Large-v3-Turbo** (via Groq API) for speed & accuracy.
-    -   *Diarization:* **Pyannote Audio 3.1** (Hugging Face) for speaker identification.
-    -   *Summarization/Translation:* **Llama 3.1 8B Instant** (Groq API) & **Deep Translator**.
--   **Database:** MySQL (Production-grade RDMS) with **SQLAlchemy ORM**.
+    -   *Diarization:* **Pyannote Audio 4.0.4** (Hugging Face) for speaker identification.
+    -   *Summarization/Translation:* **Llama 3.1 8B Instant** (Groq API) as primary, with Hugging Face (**BART**) fallback & **Deep Translator**.
+-   **Database:** MySQL (Production-grade RDMS) with **SQLAlchemy ORM** and JSON file storage.
 -   **Authentication:** OAuth2 with Password Flow (JWT) & bcrypt hashing.
--   **Utilities:** Pydub (Audio processing), ReportLab (PDF), Python-docx (Word), Pysrt (Subtitles).
+-   **Utilities:** torchaudio (Audio processing), ReportLab (PDF), Python-docx (Word), Pysrt (Subtitles).
 
 ### Frontend
 -   **Core:** HTML5, CSS3, JavaScript (ES6+ Modules).
@@ -71,7 +71,7 @@ TranscribeFlow is a modern, full-stack web application designed to transform aud
 ## 🚀 Installation & Setup
 
 Prerequisites:
--   **Python 3.10+** installed.
+-   **Python 3.11.9** installed.
 -   **MySQL Server** installed and running.
 -   **Git** for version control.
 
@@ -106,24 +106,31 @@ pip install -r requirements.txt
 2.  Update the `.env` file with your credentials (see below).
 
 ### 5. Configure Environment Variables
-Create a `.env` file in the root directory (copy from `.env.example` if available):
+Create a `.env` file in the root directory (copy from `.env-sample` if available):
 
 ```ini
+# AI Services APIs
+GROQ_API_KEY=your_groq_api_key_here
+HUGGINGFACE_TOKEN=your_huggingface_token_here
+
 # Database Config
-MYSQL_USER=root
-MYSQL_PASSWORD=your_mysql_password
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
+MYSQL_USER=your_mysql_username
+MYSQL_PASSWORD=your_mysql_password
 MYSQL_DATABASE=transcribeflow
+DATABASE_URL=mysql+pymysql://your_mysql_username:your_mysql_password@localhost:3306/transcribeflow
 
-# Security
-SECRET_KEY=your_super_secret_jwt_key
-ALGORITHM=HS256
+# Security / JWT Settings
+SECRET_KEY=your_super_secret_key_here
+JWT_SECRET_KEY=your_jwt_secret_key_here
+JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# AI APIs
-GROQ_API_KEY=gsk_...
-HUGGINGFACE_TOKEN=hf_...
+# App Settings
+FRONTEND_URL=http://localhost:8000
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE_MB=25
 ```
 
 ### 6. Run the Application
@@ -164,8 +171,9 @@ TranscribeFlow exposes a full REST API. Access the interactive Swagger UI at:
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `POST` | `/api/auth/register` | Register a new user |
-| `POST` | `/api/auth/token` | Login and get access token |
-| `POST` | `/api/upload` | Upload audio for processing |
+| `POST` | `/api/auth/login` | Login and get access token |
+| `POST` | `/api/upload` | Upload audio for synchronous processing |
+| `POST` | `/api/upload/batch` | Upload multiple files for background batch processing |
 | `GET` | `/api/files` | List user's files |
 | `GET` | `/api/files/{id}` | Get specific file results |
 | `POST` | `/api/translate` | Translate text content |
@@ -177,21 +185,29 @@ TranscribeFlow exposes a full REST API. Access the interactive Swagger UI at:
 ```
 TranscribeFlow/
 ├── backend/                # Python FastAPI Backend
-│   ├── main.py             # App entry point
-│   ├── auth.py             # Authentication logic
-│   ├── database.py         # DB connection & session
-│   ├── models.py           # AI Pipeline (Whisper/Pyannote)
-│   ├── schemas.py          # Pydantic models
+│   ├── __init__.py         # Package initialization
 │   ├── crud.py             # Database CRUD operations
-│   └── ...
+│   ├── database.py         # DB connection & sessionmaker
+│   ├── db_models.py        # SQLAlchemy ORM models
+│   ├── dependencies.py     # FastAPI dependencies (auth setup)
+│   ├── export.py           # Export formatting (TXT, PDF, DOCX, SRT)
+│   ├── main.py             # App entry point & API endpoints
+│   ├── models.py           # AI Pipeline (Whisper/Pyannote/Llama)
+│   ├── schemas.py          # Pydantic validation schemas
+│   └── security.py         # JWT tokens and password hashing
+├── content_files/          # JSON transcripts storage
 ├── frontend/               # Static Frontend Assets
-│   ├── static/             # CSS, JS, Images
+│   ├── static/             # CSS, JS, and image assets
+│   ├── dashboard.html      # User Dashboard
+│   ├── history.html        # History of Past Transcriptions
 │   ├── index.html          # Landing Page
-│   ├── login.html          # Auth Pages
-│   ├── upload.html         # Dashboard/Upload
-│   └── results.html        # Results View
+│   ├── login.html          # Login Page
+│   ├── register.html       # Registration Page
+│   ├── results.html        # Results View for Transcripts
+│   ├── upload.html         # Audio Upload Interface
+│   └── user.html           # User Profile & Settings
 ├── uploads/                # Temp storage for audio files
-├── .env                    # Environment variables
+├── .env-sample             # Environment variables template
 ├── requirements.txt        # Python dependencies
 └── README.md               # Documentation
 ```
