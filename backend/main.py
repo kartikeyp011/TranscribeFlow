@@ -45,6 +45,16 @@ from backend.security import (
 )
 from backend.schemas import UserCreate, UserLogin, Token, UpdateUsername, ChangePassword
 
+# Create Database Tables on Startup
+from backend.database import engine, Base
+from backend import db_models
+
+# Import R2 storage module
+from backend.storage import upload_content, download_content, upload_audio, get_presigned_audio_url
+
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+
 import warnings
 warnings.filterwarnings("ignore", message="torchcodec is not installed correctly")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -90,9 +100,6 @@ NEGATIVE_WORDS = {
     'risky', 'concern', 'worried', 'stress', 'crisis', 'crash', 'broken'
 }
 
-# Import R2 storage module
-from backend.storage import upload_content, download_content, upload_audio, get_presigned_audio_url
-
 def save_content_file(data: dict) -> str:
     """
     Save content data to Cloudflare R2 and return the R2 object key.
@@ -111,9 +118,6 @@ def read_content_file(r2_key: str) -> dict:
 # =====================================================
 # Content File Management
 # =====================================================
-
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 
 # Request model for translation
 class TranslateRequest(BaseModel):
@@ -177,21 +181,6 @@ async def process_log_queue():
         for rid in dead:
             active_connections.pop(rid, None)
 
-# Application lifespan handler
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Manage application startup and shutdown tasks."""
-    global main_loop
-    main_loop = asyncio.get_running_loop()
-    task = asyncio.create_task(process_log_queue())
-    yield
-    task.cancel()
-    active_connections.clear()
-
-# Create Database Tables on Startup
-from backend.database import engine, Base
-from backend import db_models
-
 
 # Create FastAPI app
 app = FastAPI(
@@ -221,19 +210,6 @@ STATIC_DIR = BASE_DIR / "frontend" / "static"
 ALLOWED_EXTENSIONS = {".mp3", ".wav", ".m4a", ".flac", ".ogg"}
 MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB limit
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global main_loop
-    main_loop = asyncio.get_running_loop()
-    
-    # ← Move all DB setup here (runs AFTER port is bound)
-    await run_in_threadpool(_init_db)
-    
-    task = asyncio.create_task(process_log_queue())
-    yield
-    task.cancel()
-    active_connections.clear()
-
 def _init_db():
     """Run DB migrations — called lazily after startup."""
     Base.metadata.create_all(bind=engine)
@@ -248,6 +224,19 @@ def _init_db():
         else:
             logger.info("✅ duration_seconds column already exists")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global main_loop
+    main_loop = asyncio.get_running_loop()
+    
+    # ← Move all DB setup here (runs AFTER port is bound)
+    await run_in_threadpool(_init_db)
+    
+    task = asyncio.create_task(process_log_queue())
+    yield
+    task.cancel()
+    active_connections.clear()
+    
 # Serve static assets (CSS, JS, images)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -434,7 +423,7 @@ async def upload_audio(
     logger.info(f"🔧 Diarization enabled: {diarization_enabled} (raw value: '{enable_diarization}')")
 
     # Transcribe
-    transcript_result = await run_in_threadpool(get_pipeline.transcribe, path, language)
+    transcript_result = await run_in_threadpool(get_pipeline().transcribe, path, language)
     transcript_text = transcript_result["text"]
     word_timestamps = transcript_result["words"]
     transcript_segments = transcript_result.get("segments", [])
@@ -453,7 +442,7 @@ async def upload_audio(
             
             # Run diarization and wait for completion
             speaker_segments = await run_in_threadpool(
-                get_pipeline.diarize_speakers,
+                get_pipeline().diarize_speakers,
                 path,
                 num_speakers
             )
@@ -468,7 +457,7 @@ async def upload_audio(
                 logger.info(f"👤 Found {unique_speakers} unique speakers")
                 
                 # Merge with all available transcript data
-                speaker_transcript = get_pipeline.merge_diarization_with_transcript(
+                speaker_transcript = get_pipeline().merge_diarization_with_transcript(
                     word_timestamps,
                     speaker_segments,
                     transcript_segments=transcript_segments,
@@ -478,7 +467,7 @@ async def upload_audio(
                 logger.info(f"📝 Created {len(speaker_transcript)} speaker turns")
                 
                 # Format for display
-                formatted_transcript = get_pipeline.format_transcript_with_speakers(speaker_transcript)
+                formatted_transcript = get_pipeline().format_transcript_with_speakers(speaker_transcript)
                 
                 logger.info(f"✅ Diarization complete! Transcript formatted with {unique_speakers} speakers")
             else:
@@ -492,7 +481,7 @@ async def upload_audio(
             logger.warning("⚠️ Continuing with original transcript")
     
     # Summarize (use the formatted transcript if diarization was used)
-    summary = await run_in_threadpool(get_pipeline.summarize, formatted_transcript, summary_mode)
+    summary = await run_in_threadpool(get_pipeline().summarize, formatted_transcript, summary_mode)
     
     # Create content file data
     content_data = {
@@ -652,7 +641,7 @@ def process_audio_file(
         logger.info(f"🎙️ Processing {filename}...")
         
         # Transcribe
-        transcript_result = get_pipeline.transcribe(save_path, language)
+        transcript_result = get_pipeline().transcribe(save_path, language)
         transcript_text = transcript_result["text"]
         word_timestamps = transcript_result["words"]
         transcript_segments = transcript_result.get("segments", [])
@@ -663,22 +652,22 @@ def process_audio_file(
         
         if enable_diarization:
             try:
-                speaker_segments = get_pipeline.diarize_speakers(save_path, num_speakers)
+                speaker_segments = get_pipeline().diarize_speakers(save_path, num_speakers)
                 
                 if speaker_segments:
-                    speaker_transcript = get_pipeline.merge_diarization_with_transcript(
+                    speaker_transcript = get_pipeline().merge_diarization_with_transcript(
                         word_timestamps,
                         speaker_segments,
                         transcript_segments=transcript_segments,
                         full_text=transcript_text
                     )
-                    formatted_transcript = get_pipeline.format_transcript_with_speakers(speaker_transcript)
+                    formatted_transcript = get_pipeline().format_transcript_with_speakers(speaker_transcript)
                     
             except Exception as e:
                 logger.warning(f"⚠️ Diarization failed for {filename}: {e}")
         
         # Summarize
-        summary = get_pipeline.summarize(formatted_transcript, summary_mode)
+        summary = get_pipeline().summarize(formatted_transcript, summary_mode)
         
         # Save to file (NOT DB)
         content_data = {
@@ -747,14 +736,14 @@ async def stream_audio(filename: str, request: Request):
 @app.post("/api/detect-language")
 async def detect_language(req: DetectLanguageRequest):
     """Detect language of text"""
-    lang = await run_in_threadpool(get_pipeline.detect_language, req.text)
+    lang = await run_in_threadpool(get_pipeline().detect_language, req.text)
     return {"language": lang}
 
 @app.post("/api/translate")
 async def translate_text(req: TranslateRequest):
     """Translate text between languages"""
     result = await run_in_threadpool(
-        get_pipeline.translate_text,
+        get_pipeline().translate_text,
         req.text,
         req.source_lang,
         req.target_lang,
