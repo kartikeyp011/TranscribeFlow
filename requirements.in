@@ -1,0 +1,65 @@
+# Core API
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+python-jose[cryptography]
+email-validator
+itsdangerous
+
+# Database
+sqlalchemy
+alembic
+psycopg2-binary
+
+# Auth & Security
+authlib
+cryptography
+
+# Transcription
+faster-whisper
+ctranslate2
+
+# Diarization
+pyannote-audio
+pyannote-core
+pyannote-database
+pyannote-metrics
+pyannote-pipeline
+pyannoteai-sdk
+
+# Audio / ML
+torch
+torchaudio
+torchaudio
+speechbrain
+librosa
+soundfile
+transformers
+accelerate
+sentencepiece
+tokenizers
+
+# NLP / Utils
+langdetect
+deep-translator
+nltk
+groq
+
+# File export
+python-docx
+openpyxl
+reportlab
+pysrt
+
+# Cloud
+boto3
+
+# Utilities
+aiofiles
+requests
+httpx
+tqdm
+rich
+tabulate
+tenacity

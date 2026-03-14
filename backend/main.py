@@ -45,6 +45,10 @@ from backend.security import (
 )
 from backend.schemas import UserCreate, UserLogin, Token, UpdateUsername, ChangePassword
 
+import warnings
+warnings.filterwarnings("ignore", message="torchcodec is not installed correctly")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 # =====================================================
 # Constants & Configuration
 # =====================================================
