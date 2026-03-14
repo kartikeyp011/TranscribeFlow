@@ -2,6 +2,7 @@ services:
   - type: web
     name: transcribeflow
     runtime: python
+    pythonVersion: "3.11.9"
     region: singapore
     branch: main
     buildCommand: pip install -r requirements.txt
