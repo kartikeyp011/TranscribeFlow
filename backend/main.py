@@ -32,7 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 # Backend application modules
-from backend.models import pipeline
+from backend.models import get_pipeline
 from backend.database import get_db
 from backend import crud, schemas
 from backend.dependencies import get_current_user
@@ -190,23 +190,8 @@ async def lifespan(app: FastAPI):
 
 # Create Database Tables on Startup
 from backend.database import engine, Base
-from backend import db_models  # Import models so they're registered
+from backend import db_models
 
-# Create all tables
-Base.metadata.create_all(bind=engine)
-logger.info("✅ Database tables created/verified")
-
-# ── Migrate: add duration_seconds column if missing ──────────────
-from sqlalchemy import inspect as sa_inspect, text as sa_text
-insp = sa_inspect(engine)
-if "files" in insp.get_table_names():
-    existing_cols = {c["name"] for c in insp.get_columns("files")}
-    if "duration_seconds" not in existing_cols:
-        with engine.begin() as conn:
-            conn.execute(sa_text("ALTER TABLE files ADD COLUMN duration_seconds FLOAT NULL"))
-        logger.info("✅ Migrated: added duration_seconds column to files table")
-    else:
-        logger.info("✅ duration_seconds column already exists")
 
 # Create FastAPI app
 app = FastAPI(
@@ -235,6 +220,33 @@ STATIC_DIR = BASE_DIR / "frontend" / "static"
 # File validation settings
 ALLOWED_EXTENSIONS = {".mp3", ".wav", ".m4a", ".flac", ".ogg"}
 MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB limit
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global main_loop
+    main_loop = asyncio.get_running_loop()
+    
+    # ← Move all DB setup here (runs AFTER port is bound)
+    await run_in_threadpool(_init_db)
+    
+    task = asyncio.create_task(process_log_queue())
+    yield
+    task.cancel()
+    active_connections.clear()
+
+def _init_db():
+    """Run DB migrations — called lazily after startup."""
+    Base.metadata.create_all(bind=engine)
+    logger.info("✅ Database tables created/verified")
+    insp = sa_inspect(engine)
+    if "files" in insp.get_table_names():
+        existing_cols = {c["name"] for c in insp.get_columns("files")}
+        if "duration_seconds" not in existing_cols:
+            with engine.begin() as conn:
+                conn.execute(sa_text("ALTER TABLE files ADD COLUMN duration_seconds FLOAT NULL"))
+            logger.info("✅ Migrated: added duration_seconds column")
+        else:
+            logger.info("✅ duration_seconds column already exists")
 
 # Serve static assets (CSS, JS, images)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -422,7 +434,7 @@ async def upload_audio(
     logger.info(f"🔧 Diarization enabled: {diarization_enabled} (raw value: '{enable_diarization}')")
 
     # Transcribe
-    transcript_result = await run_in_threadpool(pipeline.transcribe, path, language)
+    transcript_result = await run_in_threadpool(get_pipeline.transcribe, path, language)
     transcript_text = transcript_result["text"]
     word_timestamps = transcript_result["words"]
     transcript_segments = transcript_result.get("segments", [])
@@ -441,7 +453,7 @@ async def upload_audio(
             
             # Run diarization and wait for completion
             speaker_segments = await run_in_threadpool(
-                pipeline.diarize_speakers,
+                get_pipeline.diarize_speakers,
                 path,
                 num_speakers
             )
@@ -456,7 +468,7 @@ async def upload_audio(
                 logger.info(f"👤 Found {unique_speakers} unique speakers")
                 
                 # Merge with all available transcript data
-                speaker_transcript = pipeline.merge_diarization_with_transcript(
+                speaker_transcript = get_pipeline.merge_diarization_with_transcript(
                     word_timestamps,
                     speaker_segments,
                     transcript_segments=transcript_segments,
@@ -466,7 +478,7 @@ async def upload_audio(
                 logger.info(f"📝 Created {len(speaker_transcript)} speaker turns")
                 
                 # Format for display
-                formatted_transcript = pipeline.format_transcript_with_speakers(speaker_transcript)
+                formatted_transcript = get_pipeline.format_transcript_with_speakers(speaker_transcript)
                 
                 logger.info(f"✅ Diarization complete! Transcript formatted with {unique_speakers} speakers")
             else:
@@ -480,7 +492,7 @@ async def upload_audio(
             logger.warning("⚠️ Continuing with original transcript")
     
     # Summarize (use the formatted transcript if diarization was used)
-    summary = await run_in_threadpool(pipeline.summarize, formatted_transcript, summary_mode)
+    summary = await run_in_threadpool(get_pipeline.summarize, formatted_transcript, summary_mode)
     
     # Create content file data
     content_data = {
@@ -640,7 +652,7 @@ def process_audio_file(
         logger.info(f"🎙️ Processing {filename}...")
         
         # Transcribe
-        transcript_result = pipeline.transcribe(save_path, language)
+        transcript_result = get_pipeline.transcribe(save_path, language)
         transcript_text = transcript_result["text"]
         word_timestamps = transcript_result["words"]
         transcript_segments = transcript_result.get("segments", [])
@@ -651,22 +663,22 @@ def process_audio_file(
         
         if enable_diarization:
             try:
-                speaker_segments = pipeline.diarize_speakers(save_path, num_speakers)
+                speaker_segments = get_pipeline.diarize_speakers(save_path, num_speakers)
                 
                 if speaker_segments:
-                    speaker_transcript = pipeline.merge_diarization_with_transcript(
+                    speaker_transcript = get_pipeline.merge_diarization_with_transcript(
                         word_timestamps,
                         speaker_segments,
                         transcript_segments=transcript_segments,
                         full_text=transcript_text
                     )
-                    formatted_transcript = pipeline.format_transcript_with_speakers(speaker_transcript)
+                    formatted_transcript = get_pipeline.format_transcript_with_speakers(speaker_transcript)
                     
             except Exception as e:
                 logger.warning(f"⚠️ Diarization failed for {filename}: {e}")
         
         # Summarize
-        summary = pipeline.summarize(formatted_transcript, summary_mode)
+        summary = get_pipeline.summarize(formatted_transcript, summary_mode)
         
         # Save to file (NOT DB)
         content_data = {
@@ -735,14 +747,14 @@ async def stream_audio(filename: str, request: Request):
 @app.post("/api/detect-language")
 async def detect_language(req: DetectLanguageRequest):
     """Detect language of text"""
-    lang = await run_in_threadpool(pipeline.detect_language, req.text)
+    lang = await run_in_threadpool(get_pipeline.detect_language, req.text)
     return {"language": lang}
 
 @app.post("/api/translate")
 async def translate_text(req: TranslateRequest):
     """Translate text between languages"""
     result = await run_in_threadpool(
-        pipeline.translate_text,
+        get_pipeline.translate_text,
         req.text,
         req.source_lang,
         req.target_lang,

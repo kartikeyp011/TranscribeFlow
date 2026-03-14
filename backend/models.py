@@ -31,7 +31,6 @@ class TranscribeFlowPipeline:
     # Initialize API clients and cache
     def __init__(self):
         logger.info("🚀 Initializing TranscribeFlowPipeline...")
-
         self.groq_key = os.getenv("GROQ_API_KEY")
         if not self.groq_key:
             raise ValueError("Missing GROQ_API_KEY")
@@ -43,10 +42,20 @@ class TranscribeFlowPipeline:
         self.hf_headers = {"Authorization": f"Bearer {self.hf_key}"}
         self.hf_api_url = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
 
-        # Cache translations to avoid redundant API calls
         self.translation_cache = {}
+        self._diarization_pipeline = None  # ← lazy cache
         logger.info("🎯 Pipeline initialized\n")
 
+    def _get_diarization_pipeline(self):
+        """Load diarization pipeline once and cache it."""
+        if self._diarization_pipeline is None:
+            logger.info("🔄 Loading diarization pipeline (first use)...")
+            self._diarization_pipeline = DiarizationPipeline.from_pretrained(
+                "pyannote/speaker-diarization-community-1",
+                token=self.hf_key
+            )
+            logger.info("✅ Diarization pipeline loaded")
+        return self._diarization_pipeline
 
     # Audio transcription with timestamps
     def transcribe(self, audio_input, language="en") -> dict:
@@ -505,10 +514,7 @@ Text:
             logger.info("✅ Audio preprocessed for diarization")
             
             # Load diarization pipeline (pyannote-audio 4.0+)
-            diarization_pipeline = DiarizationPipeline.from_pretrained(
-                "pyannote/speaker-diarization-community-1",
-                token=hf_token
-            )
+            diarization_pipeline = self._get_diarization_pipeline()
             
             # Pass audio as in-memory waveform dict to avoid torchcodec/FFmpeg dependency
             # pyannote 4.0 accepts {'waveform': (channel, time) Tensor, 'sample_rate': int}
@@ -766,6 +772,11 @@ Text:
         return '\n\n'.join(formatted)
 
 
-# Singleton pipeline instance
-# This ensures we reuse the same client instances across requests
-pipeline = TranscribeFlowPipeline()
+# Lazy singleton — only created on first use
+_pipeline_instance = None
+
+def get_pipeline() -> TranscribeFlowPipeline:
+    global _pipeline_instance
+    if _pipeline_instance is None:
+        _pipeline_instance = TranscribeFlowPipeline()
+    return _pipeline_instance
