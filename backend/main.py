@@ -55,6 +55,11 @@ from backend.storage import upload_content, download_content, upload_audio, get_
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["ORT_DISABLE_ALL_EPS_EXCEPT_DEF"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 import warnings
 warnings.filterwarnings("ignore", message="torchcodec is not installed correctly")
 warnings.filterwarnings("ignore", category=DeprecationWarning)

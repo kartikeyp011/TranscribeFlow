@@ -1,3 +1,12 @@
+# Env / GPU suppression (must be first)
+# Set in Render environment variables:
+# CUDA_VISIBLE_DEVICES=""
+# ORT_DISABLE_ALL_EPS_EXCEPT_DEF=1
+# TOKENIZERS_PARALLELISM=false
+
+# CPU-only torch index
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 # Core API
 fastapi
 uvicorn[standard]
@@ -29,9 +38,8 @@ pyannote-pipeline
 pyannoteai-sdk
 
 # Audio / ML
-torch
-torchaudio
-torchaudio
+torch==2.6.0+cpu
+torchaudio==2.6.0+cpu
 speechbrain
 librosa
 soundfile
