@@ -1,37 +1,38 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
-# Load environment variables from .env
 load_dotenv()
 
-# MySQL connection configuration from environment variables
-MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
-MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
-MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "transcribeflow")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
-# SQLAlchemy database URL
-DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+# CockroachDB requires the driver prefix to be postgresql+psycopg2
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
-# Create SQLAlchemy engine (manages DB connection pool)
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,  # Validate connection before use
-    pool_recycle=3600,   # Avoid MySQL timeout issues
-    echo=False           # Enable for SQL debugging
+    connect_args={
+        "sslmode": "require",
+        "application_name": "transcribeflow",
+    },
+    pool_pre_ping=True,
+    pool_recycle=300,
+    echo=False,
 )
 
-# Session factory used to create DB sessions per request
+# Fix: CockroachDB returns its own version string which SQLAlchemy
+# cannot parse. This patches the dialect to report a known PG version.
+from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
+PGDialect_psycopg2._get_server_version_info = lambda self, conn: (9, 5, 0)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base class for all ORM models
 Base = declarative_base()
 
-# Dependency that provides a DB session and ensures it closes after request
+
 def get_db():
     db = SessionLocal()
     try:

@@ -86,46 +86,27 @@ NEGATIVE_WORDS = {
     'risky', 'concern', 'worried', 'stress', 'crisis', 'crash', 'broken'
 }
 
-# =====================================================
-# Content File Management
-# =====================================================
-
-# Directory for storing transcription content files (separate from DB for performance)
-CONTENT_DIR = "content_files"
-os.makedirs(CONTENT_DIR, exist_ok=True)
-
-def get_content_path(filename: str) -> str:
-    """Get absolute path for a content file"""
-    return os.path.join(CONTENT_DIR, filename)
+# Import R2 storage module
+from backend.storage import upload_content, download_content, upload_audio, get_presigned_audio_url
 
 def save_content_file(data: dict) -> str:
     """
-    Save content data to a unique JSON file and return the filename.
+    Save content data to Cloudflare R2 and return the R2 object key.
     This keeps large transcription data out of the database for better performance.
     """
-    filename = f"{uuid.uuid4()}.json"
-    filepath = get_content_path(filename)
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    return filename
+    key = f"{uuid.uuid4()}.json"
+    r2_key = upload_content(data, key)
+    return r2_key
 
-def read_content_file(filename: str) -> dict:
-    """Read content data from a JSON file. Returns empty dict if file doesn't exist."""
-    if not filename: return {}
-    filepath = get_content_path(filename)
-    if not os.path.exists(filepath): return {}
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error reading content file {filename}: {e}")
+def read_content_file(r2_key: str) -> dict:
+    """Download and parse content JSON from Cloudflare R2. Returns empty dict on failure."""
+    if not r2_key:
         return {}
+    return download_content(r2_key)
 
 # =====================================================
 # Content File Management
 # =====================================================
-
-
 
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -230,10 +211,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for all origins (adjust in production)
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
+ALLOWED_ORIGINS = [FRONTEND_URL] if FRONTEND_URL != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -244,10 +227,6 @@ BASE_DIR = pathlib.Path(__file__).parent.parent.resolve()
 UPLOAD_DIR = str(BASE_DIR / "uploads")
 FRONTEND_DIR = str(BASE_DIR / "frontend")
 STATIC_DIR = BASE_DIR / "frontend" / "static"
-
-# Ensure required folders exist
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(FRONTEND_DIR, exist_ok=True)
 
 # File validation settings
 ALLOWED_EXTENSIONS = {".mp3", ".wav", ".m4a", ".flac", ".ogg"}
@@ -422,10 +401,17 @@ async def upload_audio(
         raise HTTPException(413, "File too large")
 
     safe_name = f"{uuid.uuid4().hex[:8]}_{file.filename}"
-    path = os.path.join(UPLOAD_DIR, safe_name)
 
-    with open(path, "wb") as f:
-        f.write(content)
+    # Upload audio to Cloudflare R2
+    upload_audio(content, safe_name)
+
+    # Write to /tmp for AI pipeline processing
+    import tempfile
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1])
+    tmp.write(content)
+    tmp.flush()
+    tmp.close()
+    path = tmp.name
 
     # Parse diarization flag from string
     diarization_enabled = enable_diarization.lower() in ('true', '1', 'yes', 'on')
@@ -500,8 +486,12 @@ async def upload_audio(
         "speaker_segments": speaker_segments,
     }
     
-    # Save content to file (NOT DB)
-    content_filename = save_content_file(content_data)
+    # Clean up temp file from /tmp
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except Exception:
+        pass
 
     # Save metadata to database
     db_file = crud.create_file(
@@ -509,7 +499,7 @@ async def upload_audio(
         schemas.FileCreate(
             user_id=current_user.id,
             filename=file.filename,
-            saved_as=safe_name,
+            saved_as=f"audio/{safe_name}",
             file_size_mb=round(len(content) / (1024 * 1024), 2),
             language=language,
             content_file=content_filename,
@@ -576,12 +566,18 @@ async def batch_upload_audio(
             })
             continue
         
-        # Save file
         safe_name = f"{uuid.uuid4().hex[:8]}_{file.filename}"
-        save_path = os.path.join(UPLOAD_DIR, safe_name)
-        
-        with open(save_path, "wb") as f:
-            f.write(content)
+
+        # Upload audio to Cloudflare R2
+        upload_audio(content, safe_name)
+
+        # Write to /tmp for background processing
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1])
+        tmp.write(content)
+        tmp.flush()
+        tmp.close()
+        save_path = tmp.name
         
         # Parse diarization flag from string
         diarization_enabled = enable_diarization.lower() in ('true', '1', 'yes', 'on') if isinstance(enable_diarization, str) else bool(enable_diarization)
@@ -688,7 +684,7 @@ def process_audio_file(
         file_create = schemas.FileCreate(
             user_id=user_id,
             filename=filename,
-            saved_as=safe_name,
+            saved_as=f"audio/{safe_name}",
             file_size_mb=round(file_size / (1024 * 1024), 2),
             language=language,
             content_file=content_filename,
@@ -697,14 +693,19 @@ def process_audio_file(
         )
         
         db_file = crud.create_file(db, file_create)
-        
         logger.info(f"✅ Completed: {filename}")
     
     except Exception as e:
         logger.error(f"❌ Failed {filename}: {e}")
-    
+
     finally:
         db.close()
+        # Clean up temp file from /tmp
+        try:
+            if os.path.exists(save_path):
+                os.remove(save_path)
+        except Exception:
+            pass
 
 # =====================================================
 # Audio Streaming
@@ -713,75 +714,15 @@ def process_audio_file(
 @app.get("/api/stream/{filename}")
 async def stream_audio(filename: str, request: Request):
     """
-    Stream audio file with Range support for seeking.
-    Handles partial content requests for audio players that need seeking capability.
+    Generate a presigned Cloudflare R2 URL and redirect the client to it.
+    Audio is served directly from Cloudflare CDN - no bandwidth through Render.
     """
-    path = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(path):
-        raise HTTPException(404, "File not found")
-
-    file_size = os.path.getsize(path)
-    mime, _ = mimetypes.guess_type(path)
-    mime = mime or "audio/mpeg"
-
-    # Get Range header
-    range_header = request.headers.get("range")
-
-    if not range_header:
-        # No range requested, send entire file
-        def iterator():
-            with open(path, "rb") as f:
-                yield from f
-
-        return StreamingResponse(
-            iterator(),
-            media_type=mime,
-            headers={
-                "Accept-Ranges": "bytes",
-                "Content-Length": str(file_size),
-            }
-        )
-
-    # Parse range header (format: "bytes=start-end")
-    try:
-        range_str = range_header.replace("bytes=", "")
-        range_parts = range_str.split("-")
-        
-        start = int(range_parts[0]) if range_parts[0] else 0
-        end = int(range_parts[1]) if range_parts[1] else file_size - 1
-        
-        # Validate range
-        if start >= file_size or end >= file_size or start > end:
-            raise HTTPException(416, "Range Not Satisfiable")
-        
-        content_length = end - start + 1
-
-        def ranged_iterator():
-            with open(path, "rb") as f:
-                f.seek(start)
-                remaining = content_length
-                chunk_size = 8192
-                
-                while remaining > 0:
-                    chunk = f.read(min(chunk_size, remaining))
-                    if not chunk:
-                        break
-                    remaining -= len(chunk)
-                    yield chunk
-
-        return StreamingResponse(
-            ranged_iterator(),
-            status_code=206,  # Partial Content
-            media_type=mime,
-            headers={
-                "Content-Range": f"bytes {start}-{end}/{file_size}",
-                "Accept-Ranges": "bytes",
-                "Content-Length": str(content_length),
-            }
-        )
-    
-    except (ValueError, IndexError):
-        raise HTTPException(400, "Invalid Range header")
+    from backend.storage import get_presigned_audio_url
+    r2_key = f"audio/{filename}"
+    url = get_presigned_audio_url(r2_key, expires_in=3600)
+    if not url:
+        raise HTTPException(404, "File not found or storage error")
+    return RedirectResponse(url=url, status_code=302)
 
 # =====================================================
 # Translation & Language Detection
